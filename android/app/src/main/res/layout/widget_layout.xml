@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="0dp">
+
+    <ImageView
+        android:id="@+id/widget_bg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY" />
+
+    <!-- script item 1: শুধু Next Meeting থাকলেই দেখাবে, না থাকলে GONE হবে -->
+    <LinearLayout
+        android:id="@+id/layout_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/tv_status_icon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📅"
+            android:textSize="13sp" />
+
+        <!-- script item 6: readability বাড়ানো — bigger font + stronger shadow -->
+        <TextView
+            android:id="@+id/tv_status_line1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Next Meeting"
+            android:textColor="#FFFFFF"
+            android:textSize="10sp"
+            android:shadowColor="#EE000000"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="4" />
+
+        <TextView
+            android:id="@+id/tv_status_line2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="43 days"
+            android:textColor="#FFFFFF"
+            android:textSize="19sp"
+            android:textStyle="bold"
+            android:shadowColor="#EE000000"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="4" />
+
+        <TextView
+            android:id="@+id/tv_status_line3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textColor="#FFFF9AD1"
+            android:textSize="9sp"
+            android:shadowColor="#EE000000"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="4" />
+
+    </LinearLayout>
+
+    <!-- script item 8: শুধু traveling state-এ visible - "Updated X min ago" -->
+    <TextView
+        android:id="@+id/tv_last_gps_update"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/layout_status"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="2dp"
+        android:text="📡 Updated just now"
+        android:textColor="#FFFFE3F1"
+        android:textSize="8sp"
+        android:visibility="gone"
+        android:shadowColor="#DD000000"
+        android:shadowDx="0"
+        android:shadowDy="1"
+        android:shadowRadius="3" />
+
+    <!-- script item 2: বাটন বড় করা হয়েছে (22dp → 36dp, 7sp → 12sp) -->
+    <LinearLayout
+        android:id="@+id/btn_send_love"
+        android:layout_width="wrap_content"
+        android:layout_height="36dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="12dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:background="@drawable/bg_send_love"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp">
+
+        <TextView
+            android:id="@+id/tv_send_love_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="❤️ Send Love"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:shadowColor="#AA8B0050"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="3" />
+
+    </LinearLayout>
+
+    <!-- script item 3: প্রোফাইল পিকচার + হার্ট বড় করা হয়েছে (190x80 → 218x92,
+         একই aspect ratio রাখা হয়েছে যাতে fitXY স্ট্রেচ না করে) -->
+    <ImageView
+        android:id="@+id/img_profile_bar"
+        android:layout_width="218dp"
+        android:layout_height="92dp"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="35dp"
+        android:scaleType="fitXY" />
+
+    <!-- Left Name Card -->
+    <LinearLayout
+        android:id="@+id/card_name_left"
+        android:layout_width="76dp"
+        android:layout_height="29dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="18dp"
+        android:layout_marginBottom="7dp"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="@drawable/bg_name_card"
+        android:paddingStart="3dp"
+        android:paddingEnd="3dp">
+
+        <TextView
+            android:id="@+id/tv_name_left"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🐾 Bam"
+            android:textColor="#FFFFFF"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            android:singleLine="true"
+            android:shadowColor="#AA8B0050"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="3" />
+
+        <TextView
+            android:id="@+id/tv_flag_left"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🇩🇪 Germany"
+            android:textColor="#FFF0F7"
+            android:textSize="8sp"
+            android:singleLine="true"
+            android:shadowColor="#AA8B0050"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="3" />
+
+    </LinearLayout>
+
+    <!-- Right Name Card -->
+    <LinearLayout
+        android:id="@+id/card_name_right"
+        android:layout_width="76dp"
+        android:layout_height="29dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginEnd="18dp"
+        android:layout_marginBottom="7dp"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="@drawable/bg_name_card"
+        android:paddingStart="3dp"
+        android:paddingEnd="3dp">
+
+        <TextView
+            android:id="@+id/tv_name_right"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🐾 Mimi"
+            android:textColor="#FFFFFF"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            android:singleLine="true"
+            android:shadowColor="#AA8B0050"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="3" />
+
+        <TextView
+            android:id="@+id/tv_flag_right"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🇹🇭 Thailand"
+            android:textColor="#FFF0F7"
+            android:textSize="8sp"
+            android:singleLine="true"
+            android:shadowColor="#AA8B0050"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="3" />
+
+    </LinearLayout>
+
+    <!-- Time Card -->
+    <LinearLayout
+        android:id="@+id/card_time_diff"
+        android:layout_width="84dp"
+        android:layout_height="20dp"
+        android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="9dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:background="@drawable/bg_time_card">
+
+        <TextView
+            android:id="@+id/tv_time_diff"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🕐 1h diff"
+            android:textColor="#FFFFFF"
+            android:textSize="8sp"
+            android:textStyle="bold"
+            android:singleLine="true"
+            android:shadowColor="#AA8B0050"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="3" />
+
+    </LinearLayout>
+
+</RelativeLayout>
