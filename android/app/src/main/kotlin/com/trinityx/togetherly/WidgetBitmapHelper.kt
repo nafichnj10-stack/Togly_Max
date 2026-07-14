@@ -45,7 +45,12 @@ object WidgetBitmapHelper {
         // পার্টনার" বোঝায়, dog/cat কোনটা সেটা বোঝায় না। ডিফল্ট ভ্যালু আগের
         // আচরণ (dog=left, cat=right) বজায় রাখে backward-compatibility-র জন্য।
         dogSide: String = "left",
-        catSide: String = "right"
+        catSide: String = "right",
+        // ✅ client feedback item 2 (Return Travel / travel_pack): true হলে
+        // প্রোফাইল ছবি "কাছে আসার" বদলে "দূরে সরে যাওয়া" দেখাবে — অর্থাৎ
+        // progress 0→1 বাড়ার সাথে সাথে ছবি মাঝ থেকে আবার নিজের বাড়ির
+        // পজিশনে ফিরে যাবে (distance km বাড়তে থাকা অবস্থায়)
+        reverseDirection: Boolean = false
     ) {
         val W = 441
         val H = 60
@@ -79,22 +84,13 @@ object WidgetBitmapHelper {
         val leftCx = r + 4f
         val rightCx = W - r - 4f
 
-        val displayText = if (progress >= 1f) togetherText else distanceText
-        val distPaint = Paint().apply {
-            color = Color.WHITE
-            textSize = 30f
-            textAlign = Paint.Align.CENTER
-            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            isAntiAlias = true
-            setShadowLayer(5f, 1.8f, 1.8f, Color.parseColor("#FF8B0050"))
-        }
-        val distFontMetrics = distPaint.fontMetrics
-        val distY = (H * 0.06f) - distFontMetrics.ascent
-        canvas.drawText(displayText, W / 2f, distY, distPaint)
-
+        // ✅ client feedback item 4: distance text আর এই canvas bitmap-এ আঁকা হয়
+        // না — এখন সেটা widget_layout.xml-এর আলাদা tv_distance_text bubble-এ
+        // (profile bar-এর ঠিক উপরে) সেট করা হয় ToglyWidgetProvider থেকে, যাতে
+        // প্রোফাইল ছবি কাছে এলেও কখনো টেক্সট ঢাকা না পড়ে।
         val targetLeftCx = W / 2f - r - 2f
         val targetRightCx = W / 2f + r + 2f
-        val t = progress.coerceIn(0f, 1f)
+        val t = (if (reverseDirection) 1f - progress else progress).coerceIn(0f, 1f)
         val actualLeftCx = leftCx + (targetLeftCx - leftCx) * t
         val actualRightCx = rightCx + (targetRightCx - rightCx) * t
 

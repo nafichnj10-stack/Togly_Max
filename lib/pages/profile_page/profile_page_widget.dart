@@ -1685,6 +1685,45 @@ class _ProfilePageWidgetState extends State<ProfilePageWidget> {
                                                       );
                                                     }
 
+                                                    if (valueOrDefault(
+                                                                currentUserDocument
+                                                                    ?.relationshipId,
+                                                                '') !=
+                                                            '') {
+                                                      try {
+                                                        final result =
+                                                            await FirebaseFunctions
+                                                                    .instanceFor(
+                                                                        region:
+                                                                            'europe-west3')
+                                                                .httpsCallable(
+                                                                    'syncLoveBuddyTravelState')
+                                                                .call({
+                                                          "relationshipId":
+                                                              valueOrDefault(
+                                                                  currentUserDocument
+                                                                      ?.relationshipId,
+                                                                  ''),
+                                                        });
+                                                        _model.sssyyync =
+                                                            SyncLoveBuddyTravelStateCloudFunctionCallResponse(
+                                                          succeeded: true,
+                                                        );
+                                                      } on FirebaseFunctionsException catch (error) {
+                                                        _model.sssyyync =
+                                                            SyncLoveBuddyTravelStateCloudFunctionCallResponse(
+                                                          errorCode: error.code,
+                                                          succeeded: false,
+                                                        );
+                                                      }
+                                                    } else {
+                                                      await Future.delayed(
+                                                        Duration(
+                                                          milliseconds: 120,
+                                                        ),
+                                                      );
+                                                    }
+
                                                     ScaffoldMessenger.of(
                                                             context)
                                                         .showSnackBar(

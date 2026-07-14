@@ -24,9 +24,27 @@ class MainActivity : FlutterFragmentActivity() {
     // ✅ FIX: LoveBuddyLiveService আগে কখনো চালু হতো না (কোনো Dart action flow
     // থেকে কল করা হতো না) — এখন অ্যাপ চালু হওয়ার সাথে সাথেই নেটিভভাবে চালু হয়ে
     // যায়, কোনো manual wiring লাগে না।
+    // ✅ NEW: paused/not_connected state-এ widget-এ ট্যাপ করলে app খোলার সাথে
+    // সাথে নির্দিষ্ট route (Restore/Connect)-এ পাঠানোর জন্য — ToglyWidgetProvider
+    // Intent-এ "pending_route" extra দেয়, এখানে সেটা ধরে SharedPreferences-এ
+    // সেভ রাখা হয়, Dart side পরে "getPendingWidgetRoute" কল করে সেটা নিয়ে যায়।
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
         startForegroundServiceCompat(Intent(this, LoveBuddyLiveService::class.java))
+        capturePendingRoute(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        capturePendingRoute(intent)
+    }
+
+    private fun capturePendingRoute(intent: Intent?) {
+        val route = intent?.getStringExtra("pending_route") ?: return
+        getSharedPreferences("togly_prefs", MODE_PRIVATE)
+            .edit()
+            .putString("pending_widget_route", route)
+            .apply()
     }
 
     // ✅ NEW: অ্যাপ প্রতিবার foreground-এ আসার সময় (মানে লগইন করে হোম পেজে ঢোকা
@@ -82,6 +100,14 @@ class MainActivity : FlutterFragmentActivity() {
                 }
                 "requestPinWidget" -> {
                     result.success(requestPinWidget())
+                }
+                "getPendingWidgetRoute" -> {
+                    val prefs = getSharedPreferences("togly_prefs", MODE_PRIVATE)
+                    val route = prefs.getString("pending_widget_route", null)
+                    if (route != null) {
+                        prefs.edit().remove("pending_widget_route").apply()
+                    }
+                    result.success(route)
                 }
                 else -> result.notImplemented()
             }

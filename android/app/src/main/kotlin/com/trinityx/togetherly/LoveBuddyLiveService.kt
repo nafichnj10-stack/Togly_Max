@@ -1,8 +1,10 @@
 package com.trinityx.togetherly
 
+import android.app.AlarmManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
@@ -133,25 +135,7 @@ class LoveBuddyLiveService : Service() {
     }
 
     // widget_background_key কে ToglyWidgetProvider-এর চেনা state key-তে ম্যাপ করে
-    private fun resolveWidgetStateKey(backgroundKey: String, data: Map<String, Any?>): String {
-        if (backgroundKey == "birthday") {
-            val myUid = currentUid
-            val partnerUid = data["partner_uid"] as? String
-            val birthdayUids = (data["widget_birthday_user_uids"] as? List<*>)?.map { it.toString() } ?: emptyList()
-            val myBirthday = myUid != null && birthdayUids.contains(myUid)
-            val partnerBirthday = partnerUid != null && birthdayUids.contains(partnerUid)
-            return when {
-                myBirthday && partnerBirthday -> "birthday_both"
-                myBirthday -> "birthday_${data["my_love_buddy_pet"] as? String ?: "dog"}"
-                partnerBirthday -> "birthday_${data["partner_love_buddy_pet"] as? String ?: "cat"}"
-                else -> "normal"
-            }
-        }
-        if (backgroundKey.startsWith("travel_pack_")) {
-            return backgroundKey.removePrefix("travel_pack_").let { "travel_$it" }
-        }
-        return backgroundKey
-    }
+    // (এখন WidgetStateResolver.kt-এ shared — দেখুন LoveStateRefreshReceiver-ও এটা ব্যবহার করে)
 
     private fun handleRelationshipViewUpdate(data: Map<String, Any?>) {
         val prefs = getSharedPreferences("togly_prefs", Context.MODE_PRIVATE)
@@ -182,7 +166,15 @@ class LoveBuddyLiveService : Service() {
         }
 
         val rawBackgroundKey = data["widget_background_key"] as? String ?: "normal"
-        val resolvedState = resolveWidgetStateKey(rawBackgroundKey, data)
+        val resolvedState = WidgetStateResolver.resolve(rawBackgroundKey, data, currentUid)
+
+        // ✅ client feedback item 5: love_sent state হলে, ঠিক ৩০ মিনিট পরে
+        // widget নিজে থেকেই রিফ্রেশ হওয়ার জন্য একটা alarm সিডিউল করা হয় —
+        // app খোলার উপর নির্ভর করতে হয় না।
+        if (resolvedState == "love_dog_to_cat" || resolvedState == "love_cat_to_dog") {
+            val lastSentAtMs = extractTimestampMillis(data["widget_last_love_sent_at"])
+            scheduleLoveStateRefresh(lastSentAtMs)
+        }
 
         prefs.edit().apply {
             putString("widget_state", resolvedState)
@@ -242,6 +234,33 @@ class LoveBuddyLiveService : Service() {
         val myPhotoUrl = data["my_photo_url"] as? String
         val partnerPhotoUrl = data["partner_photo_url"] as? String
         loadPhotosAndRefresh(myPhotoUrl, partnerPhotoUrl)
+    }
+
+    // ✅ client feedback item 5: love_sent detect হওয়ার সাথে সাথে ঠিক (sent_at + 30min)
+    // সময়ে একটা exact, Doze-mode-safe one-shot alarm সিডিউল করা হয়। এই alarm
+    // ফায়ার হলে LoveStateRefreshReceiver সরাসরি Firestore থেকে fresh ডেটা
+    // টেনে widget_state আপডেট করে দেয় — app খোলার দরকার নেই।
+    private fun scheduleLoveStateRefresh(lastSentAtMs: Long?) {
+        val baseTime = lastSentAtMs ?: System.currentTimeMillis()
+        val triggerAtMs = baseTime + TimeUnit.MINUTES.toMillis(30) + 5000L // ৫ সেকেন্ড বাফার
+
+        // ইতিমধ্যে সময় পার হয়ে গেলে (যেমন সার্ভিস দেরিতে শুরু হলে) আলাদা করে
+        // alarm লাগবে না — পরের Firestore snapshot-ই সঠিক state দেখাবে
+        if (triggerAtMs <= System.currentTimeMillis()) return
+
+        val alarmManager = getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
+        val intent = Intent(this, LoveStateRefreshReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(
+            this, 5001, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        try {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
+        } catch (e: SecurityException) {
+            // কিছু ডিভাইসে exact-alarm পারমিশন না থাকলে সাধারণ (inexact) alarm দিয়ে fallback
+            alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
+        }
     }
 
     // Firestore Timestamp (.toDate()) বা epoch millis Number — দুটোই হ্যান্ডেল করে

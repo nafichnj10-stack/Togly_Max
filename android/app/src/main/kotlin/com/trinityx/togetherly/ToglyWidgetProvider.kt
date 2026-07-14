@@ -44,21 +44,31 @@ class ToglyWidgetProvider : AppWidgetProvider() {
 
             val views = RemoteViews(context.packageName, R.layout.widget_layout)
 
-            // ✅ Widget Tap Behavior: সবসময় শুধু মূল অ্যাপ (MainActivity) খোলে,
-            // কোনো protected page সরাসরি না — অ্যাপ নিজে ইউজারের অবস্থা
-            // (paused/not-connected/logged-out/onboarding) চেক করে সঠিক
-            // পেজে নিয়ে যাবে (এটা Flutter-side root-route এর দায়িত্ব)
-            val openAppIntent = Intent(context, MainActivity::class.java)
-            val openAppPendingIntent = PendingIntent.getActivity(
-                context, 0, openAppIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            views.setOnClickPendingIntent(R.id.widget_bg, openAppPendingIntent)
+            // ✅ Widget Tap Behavior: সাধারণ state-এ শুধু app খোলে। কিন্তু
+            // not_connected/paused state-এ (item 1 ও 7) app খোলার সাথে সাথে
+            // সরাসরি Connect/Restore পেজে পাঠানো হয় — "pending_route" extra
+            // MainActivity ধরে রাখে, Flutter side সেটা পড়ে navigate করে।
+            fun openAppPendingIntent(routeExtra: String? = null): PendingIntent {
+                val intent = Intent(context, MainActivity::class.java)
+                if (routeExtra != null) {
+                    intent.putExtra("pending_route", routeExtra)
+                }
+                // routeExtra ভেদে আলাদা request code, যাতে PendingIntent ক্যাশ মিক্স না হয়
+                val requestCode = routeExtra?.hashCode() ?: 0
+                return PendingIntent.getActivity(
+                    context, requestCode, intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+            }
 
-            // ✅ script item 11: not connected (লগইন নেই / partner নেই / relationship_views ডকুমেন্ট নেই)
+            views.setOnClickPendingIntent(R.id.widget_bg, openAppPendingIntent())
+
+            // ✅ script item 11 + client feedback item 1: not connected —
+            // নতুন background connect_with_partner, ট্যাপ করলে সরাসরি Connect পেজে
             if (state == "not_connected") {
+                views.setOnClickPendingIntent(R.id.widget_bg, openAppPendingIntent("/connect"))
                 renderSimpleMessageState(
-                    views, R.drawable.widget_bg_not_connected, "💌",
+                    views, R.drawable.connect_with_partner, "💌",
                     lc.getString(R.string.not_connected_line1),
                     lc.getString(R.string.not_connected_line2)
                 )
@@ -66,10 +76,12 @@ class ToglyWidgetProvider : AppWidgetProvider() {
                 return
             }
 
-            // ✅ script item 10: paused relationship
+            // ✅ script item 10 + client feedback item 7: paused relationship —
+            // নতুন background reconnect_partner, ট্যাপ করলে সরাসরি Restore পেজে
             if (state == "paused") {
+                views.setOnClickPendingIntent(R.id.widget_bg, openAppPendingIntent("/restore"))
                 renderSimpleMessageState(
-                    views, R.drawable.widget_bg_paused, "💔",
+                    views, R.drawable.reconnect_partner, "💔",
                     lc.getString(R.string.paused_line1),
                     lc.getString(R.string.paused_line2)
                 )
@@ -135,12 +147,20 @@ class ToglyWidgetProvider : AppWidgetProvider() {
             val distanceText = lc.getString(R.string.distance_km_apart, distKm)
             val togetherText = lc.getString(R.string.distance_together_label)
 
+            // ✅ client feedback item 4: distance bubble সবসময় visible, শুধু
+            // "together" state-এ togetherText দেখাবে (state-ভিত্তিক, যাতে
+            // background আর bubble টেক্সট সবসময় সামঞ্জস্যপূর্ণ থাকে)
+            views.setViewVisibility(R.id.card_distance, View.VISIBLE)
+            views.setTextViewText(R.id.tv_distance_text, if (state == "together") togetherText else distanceText)
+
             // ✅ script item 8: শুধু traveling state-এ শেষ GPS আপডেট কতক্ষণ আগে এসেছে
-            if (state == "travel_dog_to_cat" || state == "travel_cat_to_dog") {
+            val isTravelingState = state == "travel_dog_to_cat" || state == "travel_cat_to_dog" ||
+                state == "travel_pack_dog_to_cat" || state == "travel_pack_cat_to_dog"
+            if (isTravelingState) {
                 val updatedAtMs = prefs.getLong("last_gps_update_ms", 0L)
                 if (updatedAtMs > 0) {
                     views.setViewVisibility(R.id.tv_last_gps_update, View.VISIBLE)
-                    views.setTextViewText(R.id.tv_last_gps_update, "📡 " + formatRelativeUpdateTime(updatedAtMs))
+                    views.setTextViewText(R.id.tv_last_gps_update, "📡 " + formatRelativeUpdateTime(lc, updatedAtMs))
                 } else {
                     views.setViewVisibility(R.id.tv_last_gps_update, View.GONE)
                 }
@@ -197,6 +217,29 @@ class ToglyWidgetProvider : AppWidgetProvider() {
                         distanceText, togetherText, heartFlightProgress, pulsePhase,
                         showCatBikeAnimation = true, catFrame = bikeFrame,
                         dogSide = dogSide, catSide = catSide
+                    )
+                }
+                // ✅ client feedback item 2: Return Travel — সাধারণ traveling থেকে
+                // আলাদা: নতুন background, "Heading Home" header, আর প্রোফাইল ছবি
+                // উল্টো দিকে (কাছ থেকে আবার দূরে) সরে যায় — reverseDirection = true।
+                // আলাদা walking-animation art না থাকায় সাইকেল অ্যানিমেশন এখানে
+                // দেখানো হচ্ছে না (bike sprite reuse করলে ভিজ্যুয়ালি না মিলত)।
+                "travel_pack_dog_to_cat" -> {
+                    views.setImageViewResource(R.id.widget_bg, R.drawable.travel_pack_dog_to_cat)
+                    applyHeader(views, true, "🏠", lc.getString(R.string.status_heading_home_line1, dogName), lc.getString(R.string.status_heading_home_line2), lc.getString(R.string.status_km_away_now, distKm))
+                    WidgetBitmapHelper.drawProfileBar(
+                        context, views, distKm, progress, true, actualLeftPhoto, actualRightPhoto,
+                        distanceText, togetherText, heartFlightProgress, pulsePhase,
+                        dogSide = dogSide, catSide = catSide, reverseDirection = true
+                    )
+                }
+                "travel_pack_cat_to_dog" -> {
+                    views.setImageViewResource(R.id.widget_bg, R.drawable.travel_pack_cat_to_dog)
+                    applyHeader(views, true, "🏠", lc.getString(R.string.status_heading_home_line1, catName), lc.getString(R.string.status_heading_home_line2), lc.getString(R.string.status_km_away_now, distKm))
+                    WidgetBitmapHelper.drawProfileBar(
+                        context, views, distKm, progress, false, actualLeftPhoto, actualRightPhoto,
+                        distanceText, togetherText, heartFlightProgress, pulsePhase,
+                        dogSide = dogSide, catSide = catSide, reverseDirection = true
                     )
                 }
                 "together" -> {
@@ -281,6 +324,7 @@ class ToglyWidgetProvider : AppWidgetProvider() {
             views.setViewVisibility(R.id.card_name_left, View.GONE)
             views.setViewVisibility(R.id.card_name_right, View.GONE)
             views.setViewVisibility(R.id.img_profile_bar, View.GONE)
+            views.setViewVisibility(R.id.card_distance, View.GONE)
             views.setViewVisibility(R.id.btn_send_love, View.GONE)
 
             views.setViewVisibility(R.id.layout_status, View.VISIBLE)
@@ -295,14 +339,14 @@ class ToglyWidgetProvider : AppWidgetProvider() {
             return if (id != 0) id else R.drawable.bg_birthday_placeholder
         }
 
-        // ✅ script item 8
-        private fun formatRelativeUpdateTime(updatedAtMs: Long): String {
+        // ✅ script item 8 + client feedback item 8: fully localized
+        private fun formatRelativeUpdateTime(lc: Context, updatedAtMs: Long): String {
             val diffMs = System.currentTimeMillis() - updatedAtMs
             val minutes = diffMs / 60000
             return when {
-                minutes < 1 -> "Updated just now"
-                minutes < 60 -> "Updated $minutes min ago"
-                else -> "Updated ${minutes / 60} h ago"
+                minutes < 1 -> lc.getString(R.string.gps_updated_just_now)
+                minutes < 60 -> lc.getString(R.string.gps_updated_min_ago, minutes)
+                else -> lc.getString(R.string.gps_updated_hours_ago, minutes / 60)
             }
         }
     }

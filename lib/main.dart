@@ -1,6 +1,7 @@
 import 'package:provider/provider.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show MethodChannel;
 
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
@@ -111,6 +112,25 @@ class _MyAppState extends State<MyApp> {
       Duration(milliseconds: 1000),
       () => _appStateNotifier.stopShowingSplashImage(),
     );
+
+    // ✅ Togly widget-এর paused/not-connected state-এ ট্যাপ করলে সরাসরি
+    // Restore/Connect পেজে নিয়ে যাওয়ার জন্য — নেটিভ MainActivity যদি কোনো
+    // pending route সেভ করে রাখে, এখানে সেটা নিয়ে navigate করা হয়। সাধারণ
+    // app launch-এ কোনো pending route থাকে না, তাই এটা বিদ্যমান আচরণ পরিবর্তন
+    // করে না।
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        const widgetChannel =
+            MethodChannel('com.trinityx.togetherly/love_buddy_widget');
+        final String? pendingRoute =
+            await widgetChannel.invokeMethod<String>('getPendingWidgetRoute');
+        if (pendingRoute != null && pendingRoute.isNotEmpty) {
+          _router.go(pendingRoute);
+        }
+      } catch (_) {
+        // চ্যানেল না থাকলে (যেমন iOS বা ওয়েব) নিঃশব্দে বাদ দেওয়া হচ্ছে
+      }
+    });
   }
 
   @override

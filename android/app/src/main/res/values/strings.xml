@@ -37,6 +37,15 @@
         <item quantity="other">🕐 %1$d hours between you</item>
     </plurals>
 
+    <string name="gps_updated_just_now">Updated just now</string>
+    <string name="gps_updated_min_ago">Updated %1$d min ago</string>
+    <string name="gps_updated_hours_ago">Updated %1$d h ago</string>
+
+    <!-- ✅ client feedback item 2: Return Travel (travel_pack) state -->
+    <string name="status_heading_home_line1">%1$s is heading home</string>
+    <string name="status_heading_home_line2">See you again soon 💜</string>
+    <string name="status_km_away_now">%1$d km away now</string>
+
     <!-- ✅ script item 10 -->
     <string name="paused_line1">Your connection is paused</string>
     <string name="paused_line2">Reconnect with your partner to bring this widget back to life 💜</string>

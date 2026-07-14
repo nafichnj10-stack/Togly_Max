@@ -34,6 +34,14 @@
         <item quantity="other">🕐 %1$d Stunden Unterschied</item>
     </plurals>
 
+    <string name="gps_updated_just_now">Gerade aktualisiert</string>
+    <string name="gps_updated_min_ago">Vor %1$d Min. aktualisiert</string>
+    <string name="gps_updated_hours_ago">Vor %1$d Std. aktualisiert</string>
+
+    <string name="status_heading_home_line1">%1$s ist auf dem Heimweg</string>
+    <string name="status_heading_home_line2">Bis bald wieder 💜</string>
+    <string name="status_km_away_now">%1$d km entfernt</string>
+
     <string name="paused_line1">Eure Verbindung ist pausiert</string>
     <string name="paused_line2">Verbinde dich wieder mit deinem Partner, um dieses Widget zu neuem Leben zu erwecken 💜</string>
 

@@ -52,6 +52,8 @@ class ProfilePageModel extends FlutterFlowModel<ProfilePageWidget> {
   SyncRelationshipViewProfileCloudFunctionCallResponse? sync;
   // Stores action output result for [Cloud Function - syncLoveBuddyDistance] action in ButtonLogout widget.
   SyncLoveBuddyDistanceCloudFunctionCallResponse? anxlove;
+  // Stores action output result for [Cloud Function - syncLoveBuddyTravelState] action in ButtonLogout widget.
+  SyncLoveBuddyTravelStateCloudFunctionCallResponse? sssyyync;
   // Stores action output result for [Cloud Function - updateProfileSettings] action in ButtonLogout widget.
   UpdateProfileSettingsCloudFunctionCallResponse? cloudFunctionwai1;
   // State field(s) for Switch widget.
