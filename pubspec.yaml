@@ -216,7 +216,7 @@ dev_dependencies:
 
 
 flutter_launcher_icons:
-  android: 'launcher_icon'
+  android: 'ic_launcher'
   ios: true
   web:
     generate: true
