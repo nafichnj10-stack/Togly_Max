@@ -109,13 +109,13 @@ object WidgetBitmapHelper {
             val x = midX + dt * (lineEnd - lineStart) / 2f
             val sag = (1f - dt * dt) * (H * 0.05f)
             val y = chainBottomY + sag
-            canvas.drawCircle(x, y, 1.7f, dotPaint)
+            canvas.drawCircle(x, y, 3.4f, dotPaint)
         }
 
         val heartCenterY = chainBottomY + 4.5f
         val heartScale = 1f + 0.35f * sin(pulsePhase * (2 * Math.PI)).toFloat()
         val heartPaint = Paint().apply {
-            textSize = 17f
+            textSize = 34f
             textAlign = Paint.Align.CENTER
             isAntiAlias = true
         }
