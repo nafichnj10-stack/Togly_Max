@@ -112,34 +112,6 @@
 
     </LinearLayout>
 
-    <!-- Distance text card — এখন widget height-এর সেন্টারে (centerInParent) -->
-    <LinearLayout
-        android:id="@+id/card_distance"
-        android:layout_width="wrap_content"
-        android:layout_height="22dp"
-        android:layout_centerInParent="true"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:background="@drawable/bg_time_card"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp">
-
-        <TextView
-            android:id="@+id/tv_distance_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="8612 km apart"
-            android:textColor="#FFFFFF"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            android:singleLine="true"
-            android:shadowColor="#DD000000"
-            android:shadowDx="0"
-            android:shadowDy="1"
-            android:shadowRadius="3" />
-
-    </LinearLayout>
-
     <ImageView
         android:id="@+id/img_profile_bar"
         android:layout_width="218dp"
@@ -262,4 +234,31 @@
 
     </LinearLayout>
 
+    <!-- Distance card সবার শেষে যাতে এটা সবার উপরে (top z-order) আঁকা হয়, profile bar-এর নিচে চাপা না পড়ে -->
+    <LinearLayout
+        android:id="@+id/card_distance"
+        android:layout_width="wrap_content"
+        android:layout_height="22dp"
+        android:layout_centerInParent="true"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:background="@drawable/bg_time_card"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp">
+
+        <TextView
+            android:id="@+id/tv_distance_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="8612 km apart"
+            android:textColor="#FFFFFF"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:singleLine="true"
+            android:shadowColor="#DD000000"
+            android:shadowDx="0"
+            android:shadowDy="1"
+            android:shadowRadius="3" />
+
+    </LinearLayout>
 </RelativeLayout>
