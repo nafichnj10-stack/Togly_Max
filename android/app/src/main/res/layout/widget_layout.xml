@@ -11,7 +11,6 @@
         android:layout_height="match_parent"
         android:scaleType="fitXY" />
 
-    <!-- script item 1: শুধু Next Meeting থাকলেই দেখাবে, না থাকলে GONE হবে -->
     <LinearLayout
         android:id="@+id/layout_status"
         android:layout_width="wrap_content"
@@ -29,7 +28,6 @@
             android:text="📅"
             android:textSize="13sp" />
 
-        <!-- script item 6: readability বাড়ানো — bigger font + stronger shadow -->
         <TextView
             android:id="@+id/tv_status_line1"
             android:layout_width="wrap_content"
@@ -46,7 +44,6 @@
             android:id="@+id/tv_status_line2"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center"
             android:text="43 days"
             android:textColor="#FFFFFF"
             android:textSize="19sp"
@@ -70,7 +67,6 @@
 
     </LinearLayout>
 
-    <!-- script item 8: শুধু traveling state-এ visible - "Updated X min ago" -->
     <TextView
         android:id="@+id/tv_last_gps_update"
         android:layout_width="wrap_content"
@@ -87,7 +83,6 @@
         android:shadowDy="1"
         android:shadowRadius="3" />
 
-    <!-- script item 2: বাটন বড় করা হয়েছে (22dp → 36dp, 7sp → 12sp) -->
     <LinearLayout
         android:id="@+id/btn_send_love"
         android:layout_width="wrap_content"
@@ -97,6 +92,7 @@
         android:layout_marginTop="8dp"
         android:layout_marginEnd="12dp"
         android:orientation="horizontal"
+        android:gravity="center"
         android:background="@drawable/bg_send_love"
         android:paddingStart="14dp"
         android:paddingEnd="14dp">
@@ -116,17 +112,14 @@
 
     </LinearLayout>
 
-    <!-- ✅ client feedback item 4: Distance text এখন আলাদা ছোট transparent
-         bubble-এ, profile picture card-এর ঠিক উপরে, কাছাকাছি — তাই কখনো
-         প্রোফাইল ছবির নিচে ঢাকা পড়বে না, সবসময় দৃশ্যমান থাকবে -->
+    <!-- Distance text card — এখন widget height-এর সেন্টারে (centerInParent) -->
     <LinearLayout
         android:id="@+id/card_distance"
         android:layout_width="wrap_content"
         android:layout_height="22dp"
-            android:layout_above="@id/img_profile_bar"
-            android:layout_marginBottom="52dp"
-        android:layout_centerHorizontal="true"
+        android:layout_centerInParent="true"
         android:orientation="horizontal"
+        android:gravity="center"
         android:background="@drawable/bg_time_card"
         android:paddingStart="12dp"
         android:paddingEnd="12dp">
@@ -147,8 +140,6 @@
 
     </LinearLayout>
 
-    <!-- script item 3: প্রোফাইল পিকচার + হার্ট বড় করা হয়েছে (190x80 → 218x92,
-         একই aspect ratio রাখা হয়েছে যাতে fitXY স্ট্রেচ না করে) -->
     <ImageView
         android:id="@+id/img_profile_bar"
         android:layout_width="218dp"
@@ -158,7 +149,6 @@
         android:layout_marginBottom="35dp"
         android:scaleType="fitXY" />
 
-    <!-- Left Name Card -->
     <LinearLayout
         android:id="@+id/card_name_left"
         android:layout_width="76dp"
@@ -168,6 +158,7 @@
         android:layout_marginStart="18dp"
         android:layout_marginBottom="7dp"
         android:orientation="vertical"
+        android:gravity="center"
         android:background="@drawable/bg_name_card"
         android:paddingStart="3dp"
         android:paddingEnd="3dp">
@@ -201,7 +192,6 @@
 
     </LinearLayout>
 
-    <!-- Right Name Card -->
     <LinearLayout
         android:id="@+id/card_name_right"
         android:layout_width="76dp"
@@ -211,6 +201,7 @@
         android:layout_marginEnd="18dp"
         android:layout_marginBottom="7dp"
         android:orientation="vertical"
+        android:gravity="center"
         android:background="@drawable/bg_name_card"
         android:paddingStart="3dp"
         android:paddingEnd="3dp">
@@ -244,7 +235,6 @@
 
     </LinearLayout>
 
-    <!-- Time Card -->
     <LinearLayout
         android:id="@+id/card_time_diff"
         android:layout_width="84dp"
@@ -253,6 +243,7 @@
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="9dp"
         android:orientation="horizontal"
+        android:gravity="center"
         android:background="@drawable/bg_time_card">
 
         <TextView
