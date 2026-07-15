@@ -87,6 +87,12 @@ class SendLoveReceiver : BroadcastReceiver() {
             // তাই app না খুলেও ঠিক ৩০ মিনিট পরে widget নিজে থেকেই normal/আগের
             // state-এ ফিরে আসবে।
             scheduleLoveStateRefresh(context)
+            // ✅ Love Sent state immediate-update fix: app বন্ধ থাকলে love পাঠানোর
+            // সাথে সাথে widget তাৎক্ষণিকভাবে love-sent state দেখাতো না — আগে যেই
+            // state (যেমন "together") ছিল সেটাই দেখাতে থাকতো, যতক্ষণ না app খোলা
+            // হতো। তাই এখানে সরাসরি LoveStateRefreshReceiver-কে broadcast করে
+            // তৎক্ষণাৎ Firestore থেকে fresh state এনে widget আপডেট করা হচ্ছে।
+            context.sendBroadcast(Intent(context, LoveStateRefreshReceiver::class.java))
         } else {
             val fallback = when (code) {
                 "COOLDOWN" -> if (waitMinutes > 0) {
