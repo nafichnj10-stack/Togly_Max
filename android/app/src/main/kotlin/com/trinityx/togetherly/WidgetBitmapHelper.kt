@@ -121,7 +121,7 @@ object WidgetBitmapHelper {
         }
         canvas.save()
         canvas.scale(heartScale, heartScale, midX, heartCenterY)
-        canvas.drawText("❤️", midX, heartCenterY, heartPaint)
+        canvas.drawText("🫂", midX, heartCenterY, heartPaint)
         canvas.restore()
 
         drawTwinkle(canvas, midX + 15f, chainBottomY - 9f, pulsePhase, speed = 4f, baseSize = 11f, offset = 0f)
