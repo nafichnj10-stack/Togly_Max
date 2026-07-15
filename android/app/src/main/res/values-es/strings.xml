@@ -11,6 +11,7 @@
     <string name="status_getting_ready_line1">%1$s se está</string>
     <string name="status_getting_ready_line2">preparando!</string>
     <string name="status_trip_starts_soon">✈️ El viaje empieza pronto</string>
+    <string name="status_trip_in_days">✈️ Viaje en %1$d días</string>
 
     <string name="status_on_the_way_line1">%1$s va de camino</string>
     <string name="status_on_the_way_line2">hacia %1$s</string>

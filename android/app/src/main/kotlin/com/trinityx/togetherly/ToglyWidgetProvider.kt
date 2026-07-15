@@ -191,12 +191,14 @@ class ToglyWidgetProvider : AppWidgetProvider() {
                 }
                 "travel_upcoming_dog_to_cat" -> {
                     views.setImageViewResource(R.id.widget_bg, R.drawable.travel_upcoming_dog_to_cat)
-                    applyHeader(views, true, "🧳", lc.getString(R.string.status_getting_ready_line1, dogName), lc.getString(R.string.status_getting_ready_line2), lc.getString(R.string.status_trip_starts_soon))
+                    val tripLine3Dog = if (countdownDays >= 0) res.getString(R.string.status_trip_in_days, countdownDays) else lc.getString(R.string.status_trip_starts_soon)
+                    applyHeader(views, true, "🧳", lc.getString(R.string.status_getting_ready_line1, dogName), lc.getString(R.string.status_getting_ready_line2), tripLine3Dog)
                     WidgetBitmapHelper.drawProfileBar(context, views, distKm, 0f, true, actualLeftPhoto, actualRightPhoto, distanceText, togetherText, heartFlightProgress, pulsePhase, dogSide = dogSide, catSide = catSide)
                 }
                 "travel_upcoming_cat_to_dog" -> {
                     views.setImageViewResource(R.id.widget_bg, R.drawable.travel_upcoming_cat_to_dog)
-                    applyHeader(views, true, "🧳", lc.getString(R.string.status_getting_ready_line1, catName), lc.getString(R.string.status_getting_ready_line2), lc.getString(R.string.status_trip_starts_soon))
+                    val tripLine3Cat = if (countdownDays >= 0) res.getString(R.string.status_trip_in_days, countdownDays) else lc.getString(R.string.status_trip_starts_soon)
+                    applyHeader(views, true, "🧳", lc.getString(R.string.status_getting_ready_line1, catName), lc.getString(R.string.status_getting_ready_line2), tripLine3Cat)
                     WidgetBitmapHelper.drawProfileBar(context, views, distKm, 0f, false, actualLeftPhoto, actualRightPhoto, distanceText, togetherText, heartFlightProgress, pulsePhase, dogSide = dogSide, catSide = catSide)
                 }
                 "travel_dog_to_cat" -> {
