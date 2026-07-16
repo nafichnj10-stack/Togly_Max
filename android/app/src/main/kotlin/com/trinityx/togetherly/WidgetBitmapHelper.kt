@@ -197,6 +197,17 @@ object WidgetBitmapHelper {
             canvas.drawBitmap(catBikeBitmap, catBikeLeft, catBikeTop, Paint().apply { isAntiAlias = true })
         }
 
+        // Distance text overlay
+        val distanceTextPaint = Paint().apply {
+            textSize = 28f
+            color = Color.WHITE
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            isAntiAlias = true
+            textAlign = Paint.Align.CENTER
+            setShadowLayer(3f, 0f, 1f, Color.parseColor("#DD000000"))
+        }
+        canvas.drawText(distanceText, W / 2f, 30f, distanceTextPaint)
+        
         views.setImageViewBitmap(R.id.img_profile_bar, bitmap)
     }
 
