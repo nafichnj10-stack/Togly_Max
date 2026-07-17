@@ -59,14 +59,17 @@ object WidgetBitmapHelper {
         val canvas = Canvas(bitmap)
         canvas.translate(0f, bikeExtraTop.toFloat())
 
+        val distanceRowHeight = 34f
+        val cardTop = -distanceRowHeight
+        val cardBottom = H.toFloat()
+        val cardCornerRadius = 26f
+        val cardRect = RectF(0f, cardTop, W.toFloat(), cardBottom)
+
         val bgPaint = Paint().apply {
             color = Color.parseColor("#33FF69B4")
             isAntiAlias = true
         }
-        canvas.drawRoundRect(
-            RectF(0f, 0f, W.toFloat(), H.toFloat()),
-            H / 2f, H / 2f, bgPaint
-        )
+        canvas.drawRoundRect(cardRect, cardCornerRadius, cardCornerRadius, bgPaint)
 
         val borderPaintBg = Paint().apply {
             color = Color.parseColor("#FF69B4")
@@ -75,8 +78,8 @@ object WidgetBitmapHelper {
             isAntiAlias = true
         }
         canvas.drawRoundRect(
-            RectF(1.25f, 1.25f, W.toFloat() - 1.25f, H.toFloat() - 1.25f),
-            H / 2f, H / 2f, borderPaintBg
+            RectF(cardRect.left + 1.25f, cardRect.top + 1.25f, cardRect.right - 1.25f, cardRect.bottom - 1.25f),
+            cardCornerRadius, cardCornerRadius, borderPaintBg
         )
 
         val cy = H / 2f + 3f
@@ -203,7 +206,7 @@ object WidgetBitmapHelper {
         val displayText = if (distanceKm <= 0) togetherText else distanceText
 
         val distanceTextPaint = Paint().apply {
-            textSize = 24f
+            textSize = 20f
             color = Color.WHITE
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             isAntiAlias = true
@@ -211,32 +214,8 @@ object WidgetBitmapHelper {
             setShadowLayer(3f, 0f, 1f, Color.parseColor("#DD000000"))
         }
 
-        val pillTextWidth = distanceTextPaint.measureText(displayText)
-        val pillPaddingH = 18f
-        val pillHeight = 30f
-        val pillWidth = (pillTextWidth + pillPaddingH * 2f).coerceAtMost(W.toFloat() - 12f)
-        val pillCenterY = -bikeExtraTop.toFloat() + pillHeight / 2f + 6f
-        val pillTop = pillCenterY - pillHeight / 2f
-        val pillBottom = pillCenterY + pillHeight / 2f
-        val pillLeft = W / 2f - pillWidth / 2f
-        val pillRight = W / 2f + pillWidth / 2f
-        val pillRect = RectF(pillLeft, pillTop, pillRight, pillBottom)
-
-        val pillBgPaint = Paint().apply {
-            color = Color.parseColor("#7AFF69B4")
-            isAntiAlias = true
-        }
-        canvas.drawRoundRect(pillRect, pillHeight / 2f, pillHeight / 2f, pillBgPaint)
-
-        val pillBorderPaint = Paint().apply {
-            color = Color.parseColor("#FF69B4")
-            style = Paint.Style.STROKE
-            strokeWidth = 1.3f
-            isAntiAlias = true
-        }
-        canvas.drawRoundRect(pillRect, pillHeight / 2f, pillHeight / 2f, pillBorderPaint)
-
-        canvas.drawText(displayText, W / 2f, pillCenterY + 8f, distanceTextPaint)
+        val distanceTextY = cardTop + distanceRowHeight / 2f + 7f
+        canvas.drawText(displayText, W / 2f, distanceTextY, distanceTextPaint)
 
         views.setImageViewBitmap(R.id.img_profile_bar, bitmap)
     }

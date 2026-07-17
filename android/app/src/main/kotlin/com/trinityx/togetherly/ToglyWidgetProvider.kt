@@ -153,7 +153,6 @@ class ToglyWidgetProvider : AppWidgetProvider() {
             // ✅ fix: duplicate distance text বাগ — এই আলাদা floating card আর
             // দেখানো হয় না, distance/together text এখন profile bar bitmap-এর
             // ভেতরেই (WidgetBitmapHelper.drawProfileBar) একটা pill আকারে আঁকা হয়।
-            views.setViewVisibility(R.id.card_distance, View.GONE)
 
             // ✅ script item 8: শুধু traveling state-এ শেষ GPS আপডেট কতক্ষণ আগে এসেছে
             val isTravelingState = state == "travel_dog_to_cat" || state == "travel_cat_to_dog" ||
@@ -328,7 +327,6 @@ class ToglyWidgetProvider : AppWidgetProvider() {
             views.setViewVisibility(R.id.card_name_left, View.GONE)
             views.setViewVisibility(R.id.card_name_right, View.GONE)
             views.setViewVisibility(R.id.img_profile_bar, View.GONE)
-            views.setViewVisibility(R.id.card_distance, View.GONE)
             views.setViewVisibility(R.id.btn_send_love, View.GONE)
 
             views.setViewVisibility(R.id.layout_status, View.VISIBLE)
