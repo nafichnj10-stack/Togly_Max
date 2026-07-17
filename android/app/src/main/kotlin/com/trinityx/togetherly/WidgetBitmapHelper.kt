@@ -217,10 +217,10 @@ object WidgetBitmapHelper {
         val distanceTextY = cardTop + distanceRowHeight / 2f + 7f
 
         // NEW: distance text-এর চারপাশে আলাদা পিল-বর্ডার
-        val textPadHorizontal = 20f
+        val textPadHorizontal = 26f
         val textWidth = distanceTextPaint.measureText(displayText)
-        val pillHeight = distanceRowHeight - 9f
-        val pillTop = cardTop + 7f
+        val pillHeight = distanceRowHeight - 13f
+        val pillTop = cardTop + 11f
         val pillRect = RectF(
             W / 2f - textWidth / 2f - textPadHorizontal,
             pillTop,
