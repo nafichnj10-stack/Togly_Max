@@ -197,17 +197,47 @@ object WidgetBitmapHelper {
             canvas.drawBitmap(catBikeBitmap, catBikeLeft, catBikeTop, Paint().apply { isAntiAlias = true })
         }
 
-        // Distance text overlay
+        // ✅ fix: duplicate distance-text বাগ — এখন card_distance bubble অথবা
+        // এই canvas দুটোর একটাই ব্যবহার হত — এখন শুধুমাত্র এইখানেই একবার
+        // pill/card সহ আঁকা হয়।
+        val displayText = if (distanceKm <= 0) togetherText else distanceText
+
         val distanceTextPaint = Paint().apply {
-            textSize = 28f
+            textSize = 24f
             color = Color.WHITE
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             isAntiAlias = true
             textAlign = Paint.Align.CENTER
             setShadowLayer(3f, 0f, 1f, Color.parseColor("#DD000000"))
         }
-        canvas.drawText(distanceText, W / 2f, 30f, distanceTextPaint)
-        
+
+        val pillTextWidth = distanceTextPaint.measureText(displayText)
+        val pillPaddingH = 18f
+        val pillHeight = 30f
+        val pillWidth = (pillTextWidth + pillPaddingH * 2f).coerceAtMost(W.toFloat() - 12f)
+        val pillCenterY = -bikeExtraTop.toFloat() + pillHeight / 2f + 6f
+        val pillTop = pillCenterY - pillHeight / 2f
+        val pillBottom = pillCenterY + pillHeight / 2f
+        val pillLeft = W / 2f - pillWidth / 2f
+        val pillRight = W / 2f + pillWidth / 2f
+        val pillRect = RectF(pillLeft, pillTop, pillRight, pillBottom)
+
+        val pillBgPaint = Paint().apply {
+            color = Color.parseColor("#7AFF69B4")
+            isAntiAlias = true
+        }
+        canvas.drawRoundRect(pillRect, pillHeight / 2f, pillHeight / 2f, pillBgPaint)
+
+        val pillBorderPaint = Paint().apply {
+            color = Color.parseColor("#FF69B4")
+            style = Paint.Style.STROKE
+            strokeWidth = 1.3f
+            isAntiAlias = true
+        }
+        canvas.drawRoundRect(pillRect, pillHeight / 2f, pillHeight / 2f, pillBorderPaint)
+
+        canvas.drawText(displayText, W / 2f, pillCenterY + 8f, distanceTextPaint)
+
         views.setImageViewBitmap(R.id.img_profile_bar, bitmap)
     }
 

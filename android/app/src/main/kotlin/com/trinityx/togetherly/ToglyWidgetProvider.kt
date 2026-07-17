@@ -150,8 +150,10 @@ class ToglyWidgetProvider : AppWidgetProvider() {
             // ✅ client feedback item 4: distance bubble সবসময় visible, শুধু
             // "together" state-এ togetherText দেখাবে (state-ভিত্তিক, যাতে
             // background আর bubble টেক্সট সবসময় সামঞ্জস্যপূর্ণ থাকে)
-            views.setViewVisibility(R.id.card_distance, View.VISIBLE)
-            views.setTextViewText(R.id.tv_distance_text, if (state == "together") togetherText else distanceText)
+            // ✅ fix: duplicate distance text বাগ — এই আলাদা floating card আর
+            // দেখানো হয় না, distance/together text এখন profile bar bitmap-এর
+            // ভেতরেই (WidgetBitmapHelper.drawProfileBar) একটা pill আকারে আঁকা হয়।
+            views.setViewVisibility(R.id.card_distance, View.GONE)
 
             // ✅ script item 8: শুধু traveling state-এ শেষ GPS আপডেট কতক্ষণ আগে এসেছে
             val isTravelingState = state == "travel_dog_to_cat" || state == "travel_cat_to_dog" ||
