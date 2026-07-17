@@ -214,17 +214,15 @@ object WidgetBitmapHelper {
             setShadowLayer(3f, 0f, 1f, Color.parseColor("#DD000000"))
         }
 
-        val distanceTextY = cardTop + distanceRowHeight / 2f + 7f
-
-        // NEW: distance text-এর চারপাশে আলাদা পিল-বর্ডার
-        val textPadHorizontal = 26f
-        val textWidth = distanceTextPaint.measureText(displayText)
-        val pillHeight = distanceRowHeight - 13f
+        // distance পিল — প্রোফাইল বড় বাবলের ৯২% প্রস্থ, height ১.৫ গুন,
+        // আর টেক্সট পিলের সম্পুর্ন মাঝে থাকবে
+        val pillWidth = W * 0.92f
         val pillTop = cardTop + 11f
+        val pillHeight = (distanceRowHeight - 13f) * 1.5f
         val pillRect = RectF(
-            W / 2f - textWidth / 2f - textPadHorizontal,
+            W / 2f - pillWidth / 2f,
             pillTop,
-            W / 2f + textWidth / 2f + textPadHorizontal,
+            W / 2f + pillWidth / 2f,
             pillTop + pillHeight
         )
         val pillCornerRadius = pillHeight / 2f
@@ -242,6 +240,9 @@ object WidgetBitmapHelper {
             isAntiAlias = true
         }
         canvas.drawRoundRect(pillRect, pillCornerRadius, pillCornerRadius, pillBorderPaint)
+
+        val distanceTextFm = distanceTextPaint.fontMetrics
+        val distanceTextY = pillRect.centerY() - (distanceTextFm.ascent + distanceTextFm.descent) / 2f
         canvas.drawText(displayText, W / 2f, distanceTextY, distanceTextPaint)
 
         views.setImageViewBitmap(R.id.img_profile_bar, bitmap)
