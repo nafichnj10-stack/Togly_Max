@@ -1,0 +1,27 @@
+
+        // NEW: distance text-এর চারপাশে আলাদা পিল-বর্ডার
+        val textPadHorizontal = 14f
+        val textWidth = distanceTextPaint.measureText(displayText)
+        val pillHeight = distanceRowHeight - 6f
+        val pillTop = cardTop + 3f
+        val pillRect = RectF(
+            W / 2f - textWidth / 2f - textPadHorizontal,
+            pillTop,
+            W / 2f + textWidth / 2f + textPadHorizontal,
+            pillTop + pillHeight
+        )
+        val pillCornerRadius = pillHeight / 2f
+
+        val pillBgPaint = Paint().apply {
+            color = Color.parseColor("#40FF69B4")
+            isAntiAlias = true
+        }
+        canvas.drawRoundRect(pillRect, pillCornerRadius, pillCornerRadius, pillBgPaint)
+
+        val pillBorderPaint = Paint().apply {
+            color = Color.parseColor("#FF69B4")
+            style = Paint.Style.STROKE
+            strokeWidth = 1.3f
+            isAntiAlias = true
+        }
+        canvas.drawRoundRect(pillRect, pillCornerRadius, pillCornerRadius, pillBorderPaint)

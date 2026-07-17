@@ -1,0 +1,81 @@
+[1mdiff --git a/android/app/src/main/kotlin/com/trinityx/togetherly/WidgetBitmapHelper.kt b/android/app/src/main/kotlin/com/trinityx/togetherly/WidgetBitmapHelper.kt[m
+[1mindex d258690..97ed5c2 100644[m
+[1m--- a/android/app/src/main/kotlin/com/trinityx/togetherly/WidgetBitmapHelper.kt[m
+[1m+++ b/android/app/src/main/kotlin/com/trinityx/togetherly/WidgetBitmapHelper.kt[m
+[36m@@ -59,14 +59,17 @@[m [mobject WidgetBitmapHelper {[m
+         val canvas = Canvas(bitmap)[m
+         canvas.translate(0f, bikeExtraTop.toFloat())[m
+ [m
+[32m+[m[32m        val distanceRowHeight = 34f[m
+[32m+[m[32m        val cardTop = -distanceRowHeight[m
+[32m+[m[32m        val cardBottom = H.toFloat()[m
+[32m+[m[32m        val cardCornerRadius = 26f[m
+[32m+[m[32m        val cardRect = RectF(0f, cardTop, W.toFloat(), cardBottom)[m
+[32m+[m
+         val bgPaint = Paint().apply {[m
+             color = Color.parseColor("#33FF69B4")[m
+             isAntiAlias = true[m
+         }[m
+[31m-        canvas.drawRoundRect([m
+[31m-            RectF(0f, 0f, W.toFloat(), H.toFloat()),[m
+[31m-            H / 2f, H / 2f, bgPaint[m
+[31m-        )[m
+[32m+[m[32m        canvas.drawRoundRect(cardRect, cardCornerRadius, cardCornerRadius, bgPaint)[m
+ [m
+         val borderPaintBg = Paint().apply {[m
+             color = Color.parseColor("#FF69B4")[m
+[36m@@ -75,8 +78,8 @@[m [mobject WidgetBitmapHelper {[m
+             isAntiAlias = true[m
+         }[m
+         canvas.drawRoundRect([m
+[31m-            RectF(1.25f, 1.25f, W.toFloat() - 1.25f, H.toFloat() - 1.25f),[m
+[31m-            H / 2f, H / 2f, borderPaintBg[m
+[32m+[m[32m            RectF(cardRect.left + 1.25f, cardRect.top + 1.25f, cardRect.right - 1.25f, cardRect.bottom - 1.25f),[m
+[32m+[m[32m            cardCornerRadius, cardCornerRadius, borderPaintBg[m
+         )[m
+ [m
+         val cy = H / 2f + 3f[m
+[36m@@ -203,7 +206,7 @@[m [mobject WidgetBitmapHelper {[m
+         val displayText = if (distanceKm <= 0) togetherText else distanceText[m
+ [m
+         val distanceTextPaint = Paint().apply {[m
+[31m-            textSize = 24f[m
+[32m+[m[32m            textSize = 20f[m
+             color = Color.WHITE[m
+             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)[m
+             isAntiAlias = true[m
+[36m@@ -211,32 +214,8 @@[m [mobject WidgetBitmapHelper {[m
+             setShadowLayer(3f, 0f, 1f, Color.parseColor("#DD000000"))[m
+         }[m
+ [m
+[31m-        val pillTextWidth = distanceTextPaint.measureText(displayText)[m
+[31m-        val pillPaddingH = 18f[m
+[31m-        val pillHeight = 30f[m
+[31m-        val pillWidth = (pillTextWidth + pillPaddingH * 2f).coerceAtMost(W.toFloat() - 12f)[m
+[31m-        val pillCenterY = -bikeExtraTop.toFloat() + pillHeight / 2f + 6f[m
+[31m-        val pillTop = pillCenterY - pillHeight / 2f[m
+[31m-        val pillBottom = pillCenterY + pillHeight / 2f[m
+[31m-        val pillLeft = W / 2f - pillWidth / 2f[m
+[31m-        val pillRight = W / 2f + pillWidth / 2f[m
+[31m-        val pillRect = RectF(pillLeft, pillTop, pillRight, pillBottom)[m
+[31m-[m
+[31m-        val pillBgPaint = Paint().apply {[m
+[31m-            color = Color.parseColor("#7AFF69B4")[m
+[31m-            isAntiAlias = true[m
+[31m-        }[m
+[31m-        canvas.drawRoundRect(pillRect, pillHeight / 2f, pillHeight / 2f, pillBgPaint)[m
+[31m-[m
+[31m-        val pillBorderPaint = Paint().apply {[m
+[31m-            color = Color.parseColor("#FF69B4")[m
+[31m-            style = Paint.Style.STROKE[m
+[31m-            strokeWidth = 1.3f[m
+[31m-            isAntiAlias = true[m
+[31m-        }[m
+[31m-        canvas.drawRoundRect(pillRect, pillHeight / 2f, pillHeight / 2f, pillBorderPaint)[m
+[31m-[m
+[31m-        canvas.drawText(displayText, W / 2f, pillCenterY + 8f, distanceTextPaint)[m
+[32m+[m[32m        val distanceTextY = cardTop + distanceRowHeight / 2f + 7f[m
+[32m+[m[32m        canvas.drawText(displayText, W / 2f, distanceTextY, distanceTextPaint)[m
+ [m
+         views.setImageViewBitmap(R.id.img_profile_bar, bitmap)[m
+     }[m

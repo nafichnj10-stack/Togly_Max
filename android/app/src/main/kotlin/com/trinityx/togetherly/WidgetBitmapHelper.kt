@@ -89,7 +89,7 @@ object WidgetBitmapHelper {
 
         // ✅ client feedback item 4: distance text আর এই canvas bitmap-এ আঁকা হয়
         // না — এখন সেটা widget_layout.xml-এর আলাদা tv_distance_text bubble-এ
-        // (profile bar-এর ঠিক উপরে) সেট করা হয় ToglyWidgetProvider থেকে, যাতে
+        // (প্রোফাইল বার-এর ঠিক উপরে) সেট করা হয় ToglyWidgetProvider থেকে, যাতে
         // প্রোফাইল ছবি কাছে এলেও কখনো টেক্সট ঢাকা না পড়ে।
         val targetLeftCx = W / 2f - r - 2f
         val targetRightCx = W / 2f + r + 2f
@@ -115,17 +115,18 @@ object WidgetBitmapHelper {
             canvas.drawCircle(x, y, 3.4f, dotPaint)
         }
 
+        // ✅ client feedback item 2 (এই ডেলিভারি): hug emoji (🫂) এখন সম্পূর্ণ
+        // static — আগের pulsing/growing scale animation বাদ দেওয়া হয়েছে।
+        // Bicycle animation-ই এখন এই state-এর একমাত্র movement, তাই এখানে আর
+        // আলাদা movement দরকার নেই — বড় হয়ে গেলে emoji-টা dominant/messy
+        // দেখাচ্ছিল, এখন ফিক্সড সাইজে পরিষ্কার থাকবে।
         val heartCenterY = chainBottomY + 4.5f
-        val heartScale = 1f + 0.35f * sin(pulsePhase * (2 * Math.PI)).toFloat()
         val heartPaint = Paint().apply {
             textSize = 34f
             textAlign = Paint.Align.CENTER
             isAntiAlias = true
         }
-        canvas.save()
-        canvas.scale(heartScale, heartScale, midX, heartCenterY)
         canvas.drawText("🫂", midX, heartCenterY, heartPaint)
-        canvas.restore()
 
         drawTwinkle(canvas, midX + 15f, chainBottomY - 9f, pulsePhase, speed = 4f, baseSize = 11f, offset = 0f)
         drawTwinkle(canvas, midX - 16f, chainBottomY - 6f, pulsePhase, speed = 4f, baseSize = 9f, offset = 0.5f)
@@ -202,7 +203,7 @@ object WidgetBitmapHelper {
 
         // ✅ fix: duplicate distance-text বাগ — এখন card_distance bubble অথবা
         // এই canvas দুটোর একটাই ব্যবহার হত — এখন শুধুমাত্র এইখানেই একবার
-        // pill/card সহ আঁকা হয়।
+        // pill/card সহ আঁকা হয়।
         val displayText = if (distanceKm <= 0) togetherText else distanceText
 
         val distanceTextPaint = Paint().apply {
@@ -227,8 +228,12 @@ object WidgetBitmapHelper {
         )
         val pillCornerRadius = pillHeight / 2f
 
+        // ✅ client feedback item 3: kilometer পিল আরও transparent করা হলো
+        // (আগে #40FF69B4 / ~25% opacity ছিল, এখন #20FF69B4 / ~12.5% opacity)।
+        // দরকার হলে হেক্সের প্রথম দুই ক্যারেক্টার (00-FF) বদলে opacity
+        // আরও কমানো/বাড়ানো যাবে।
         val pillBgPaint = Paint().apply {
-            color = Color.parseColor("#40FF69B4")
+            color = Color.parseColor("#20FF69B4")
             isAntiAlias = true
         }
         canvas.drawRoundRect(pillRect, pillCornerRadius, pillCornerRadius, pillBgPaint)
