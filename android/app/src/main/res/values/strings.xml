@@ -8,6 +8,13 @@
     <string name="status_next_reunion">Next reunion in</string>
     <string name="status_days_pattern">%1$d days</string>
 
+    <!-- ✅ Task 5: Next Meeting Countdown -->
+    <string name="status_next_meeting_title">Next meeting</string>
+    <string name="status_together_time_left_title">Time left together</string>
+    <string name="status_countdown_dhm">%1$dd %2$dh %3$dm</string>
+    <string name="status_countdown_hm">%1$dh %2$dm</string>
+    <string name="status_countdown_m">%1$dm</string>
+
     <string name="status_love_line1">%1$s sent you</string>
     <string name="status_love_line2">love! ❤️</string>
 

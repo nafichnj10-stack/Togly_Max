@@ -309,6 +309,12 @@ exports.syncLoveBuddyTravelState = functions
 
         updates.love_buddies_travel_target_at = null;
 
+        updates.love_buddies_travel_start_at = null;
+
+        updates.love_buddies_travel_location = "";
+
+        updates.love_buddies_travel_title = "";
+
         updates.love_buddies_travel_all_day = false;
 
         travelPackActive = false;
@@ -415,6 +421,12 @@ exports.syncLoveBuddyTravelState = functions
 
           updates.love_buddies_travel_target_at = chosenEvent.end || null;
 
+          updates.love_buddies_travel_start_at = chosenEvent.start || null;
+
+          updates.love_buddies_travel_location = nonEmptyString(chosenEvent.location);
+
+          updates.love_buddies_travel_title = nonEmptyString(chosenEvent.title);
+
           /*
            * Next Meeting now always uses an exact
            * start and end time.
@@ -480,6 +492,12 @@ exports.syncLoveBuddyTravelState = functions
         updates.love_buddies_destination_uid = null;
 
         updates.love_buddies_travel_target_at = null;
+
+        updates.love_buddies_travel_start_at = null;
+
+        updates.love_buddies_travel_location = "";
+
+        updates.love_buddies_travel_title = "";
 
         updates.love_buddies_travel_all_day = false;
 
@@ -752,6 +770,16 @@ async function syncLoveBuddyWidgetStateInternal(db, relationshipId) {
     widget_last_love_sent_at: lastLoveSentAt,
 
     widget_last_love_sent_type: lastLoveSentType,
+
+    widget_next_meeting_event_id: currentTravelEventId,
+
+    widget_next_meeting_start_at: rel.love_buddies_travel_start_at || null,
+
+    widget_next_meeting_end_at: rel.love_buddies_travel_target_at || null,
+
+    widget_next_meeting_location: rel.love_buddies_travel_location || "",
+
+    widget_next_meeting_title: rel.love_buddies_travel_title || "",
 
     widget_birthday_active: birthdayActive,
 

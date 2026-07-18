@@ -8,6 +8,9 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.view.View
 import android.widget.RemoteViews
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class ToglyWidgetProvider : AppWidgetProvider() {
 
@@ -41,6 +44,13 @@ class ToglyWidgetProvider : AppWidgetProvider() {
 
             val prefs = context.getSharedPreferences("togly_prefs", Context.MODE_PRIVATE)
             val state = prefs.getString("widget_state", "normal") ?: "normal"
+
+            // ✅ Task 5: date/countdown ফরম্যাটিং-এর জন্য ভাষা — LocaleHelper যেভাবে
+            // ঠিক করে ঠিক সেই একই লজিক (app_language pref, না থাকলে device default)
+            val lang = run {
+                val savedLang = prefs.getString("app_language", null)
+                if (savedLang == "en" || savedLang == "de" || savedLang == "es") savedLang else Locale.getDefault().language
+            }
 
             val views = RemoteViews(context.packageName, R.layout.widget_layout)
 
@@ -97,7 +107,14 @@ class ToglyWidgetProvider : AppWidgetProvider() {
             val countryLeft = prefs.getString("country_left", "Germany") ?: "Germany"
             val countryRight = prefs.getString("country_right", "Thailand") ?: "Thailand"
             val tzDiffHours = prefs.getInt("tz_diff_hours", 1)
-            val countdownDays = prefs.getInt("countdown_days", -1) // -1 = কোনো next meeting নেই
+
+            // ✅ Task 5: Next Meeting — আগের "countdown_days" (dead Firestore ফিল্ড
+            // থেকে আসত) সরিয়ে এখন relationship_views-এর widget_next_meeting_*
+            // থেকে সরাসরি সিঙ্ক হওয়া richer ফিল্ডগুলো ব্যবহার করা হচ্ছে।
+            val nextMeetingEventId = prefs.getString("next_meeting_event_id", "") ?: ""
+            val nextMeetingStartMs = prefs.getLong("next_meeting_start_at_ms", -1L)
+            val nextMeetingEndMs = prefs.getLong("next_meeting_end_at_ms", -1L)
+            val nextMeetingLocation = prefs.getString("next_meeting_location", "") ?: ""
 
             val petLeft = prefs.getString("pet_left", "dog") ?: "dog"
             val dogIsLeft = petLeft == "dog"
@@ -151,8 +168,8 @@ class ToglyWidgetProvider : AppWidgetProvider() {
             // "together" state-এ togetherText দেখাবে (state-ভিত্তিক, যাতে
             // background আর bubble টেক্সট সবসময় সামঞ্জস্যপূর্ণ থাকে)
             // ✅ fix: duplicate distance text বাগ — এই আলাদা floating card আর
-            // দেখানো হয় না, distance/together text এখন profile bar bitmap-এর
-            // ভেতরেই (WidgetBitmapHelper.drawProfileBar) একটা pill আকারে আঁকা হয়।
+            // দেখানো হয় না, distance/together text এখন profile bar bitmap-এর
+            // ভেতরেই (WidgetBitmapHelper.drawProfileBar) একটা pill আকারে আঁকা হয়।
 
             // ✅ script item 8: শুধু traveling state-এ শেষ GPS আপডেট কতক্ষণ আগে এসেছে
             val isTravelingState = state == "travel_dog_to_cat" || state == "travel_cat_to_dog" ||
@@ -172,9 +189,13 @@ class ToglyWidgetProvider : AppWidgetProvider() {
             when (state) {
                 "normal" -> {
                     views.setImageViewResource(R.id.widget_bg, R.drawable.normal_mode)
-                    // ✅ script item 1: শুধু আসল Next Meeting থাকলেই (countdownDays >= 0) header দেখাবে
-                    if (countdownDays >= 0) {
-                        applyHeader(views, true, "📅", lc.getString(R.string.status_next_reunion), lc.getString(R.string.status_days_pattern, countdownDays), "")
+                    // ✅ Task 5: শুধু আসল Next Meeting থাকলেই (event_id + start_at
+                    // দুটোই ভ্যালিড) header দেখাবে — কোনো placeholder/empty state না।
+                    if (nextMeetingEventId.isNotBlank() && nextMeetingStartMs > 0) {
+                        val countdownText = formatCountdownCompact(lc, lang, nextMeetingStartMs)
+                        val dateText = formatMeetingDateTime(lang, nextMeetingStartMs)
+                        val line3 = if (nextMeetingLocation.isNotBlank()) "$dateText · $nextMeetingLocation" else dateText
+                        applyHeader(views, true, "📅", lc.getString(R.string.status_next_meeting_title), countdownText, line3)
                     } else {
                         applyHeader(views, false, "", "", "", "")
                     }
@@ -192,13 +213,22 @@ class ToglyWidgetProvider : AppWidgetProvider() {
                 }
                 "travel_upcoming_dog_to_cat" -> {
                     views.setImageViewResource(R.id.widget_bg, R.drawable.travel_upcoming_dog_to_cat)
-                    val tripLine3Dog = if (countdownDays >= 0) res.getString(R.string.status_trip_in_days, countdownDays) else lc.getString(R.string.status_trip_starts_soon)
+                    // ✅ Task 5: line1/line2-এর বিদ্যমান "getting ready" কপি রাখা
+                    // হলো (আগের client feedback অনুযায়ী টিউন করা), শুধু line3-এ
+                    // এখন সঠিক countdown + location দেখানো হচ্ছে (আগে শুধু দিন-গণনা ছিল)
+                    val tripLine3Dog = if (nextMeetingStartMs > 0) {
+                        val countdown = formatCountdownCompact(lc, lang, nextMeetingStartMs)
+                        if (nextMeetingLocation.isNotBlank()) "$countdown · $nextMeetingLocation" else countdown
+                    } else lc.getString(R.string.status_trip_starts_soon)
                     applyHeader(views, true, "🧳", lc.getString(R.string.status_getting_ready_line1, dogName), lc.getString(R.string.status_getting_ready_line2), tripLine3Dog)
                     WidgetBitmapHelper.drawProfileBar(context, views, distKm, 0f, true, actualLeftPhoto, actualRightPhoto, distanceText, togetherText, heartFlightProgress, pulsePhase, dogSide = dogSide, catSide = catSide)
                 }
                 "travel_upcoming_cat_to_dog" -> {
                     views.setImageViewResource(R.id.widget_bg, R.drawable.travel_upcoming_cat_to_dog)
-                    val tripLine3Cat = if (countdownDays >= 0) res.getString(R.string.status_trip_in_days, countdownDays) else lc.getString(R.string.status_trip_starts_soon)
+                    val tripLine3Cat = if (nextMeetingStartMs > 0) {
+                        val countdown = formatCountdownCompact(lc, lang, nextMeetingStartMs)
+                        if (nextMeetingLocation.isNotBlank()) "$countdown · $nextMeetingLocation" else countdown
+                    } else lc.getString(R.string.status_trip_starts_soon)
                     applyHeader(views, true, "🧳", lc.getString(R.string.status_getting_ready_line1, catName), lc.getString(R.string.status_getting_ready_line2), tripLine3Cat)
                     WidgetBitmapHelper.drawProfileBar(context, views, distKm, 0f, false, actualLeftPhoto, actualRightPhoto, distanceText, togetherText, heartFlightProgress, pulsePhase, dogSide = dogSide, catSide = catSide)
                 }
@@ -247,7 +277,14 @@ class ToglyWidgetProvider : AppWidgetProvider() {
                 }
                 "together" -> {
                     views.setImageViewResource(R.id.widget_bg, R.drawable.together_mode)
-                    applyHeader(views, true, "🏡", lc.getString(R.string.status_together_line1), lc.getString(R.string.status_together_line2), "")
+                    // ✅ Task 5: end_at ভ্যালিড থাকলে "Time left together" +
+                    // countdown দেখাবে, না থাকলে আগের static মেসেজ fallback হিসেবে থাকবে
+                    if (nextMeetingEndMs > 0) {
+                        val countdownText = formatCountdownCompact(lc, lang, nextMeetingEndMs)
+                        applyHeader(views, true, "🏡", lc.getString(R.string.status_together_time_left_title), countdownText, "")
+                    } else {
+                        applyHeader(views, true, "🏡", lc.getString(R.string.status_together_line1), lc.getString(R.string.status_together_line2), "")
+                    }
                     WidgetBitmapHelper.drawProfileBar(context, views, 0, 1f, true, actualLeftPhoto, actualRightPhoto, distanceText, togetherText, heartFlightProgress, pulsePhase, dogSide = dogSide, catSide = catSide)
                 }
                 "sleep_both" -> {
@@ -350,6 +387,35 @@ class ToglyWidgetProvider : AppWidgetProvider() {
                 minutes < 60 -> lc.getString(R.string.gps_updated_min_ago, minutes)
                 else -> lc.getString(R.string.gps_updated_hours_ago, minutes / 60)
             }
+        }
+
+        // ✅ Task 5: D/H/M countdown — সেকেন্ড ইচ্ছাকৃতভাবে বাদ দেওয়া হয়েছে
+        // (Android widget সিস্টেম সেকেন্ড-বাই-সেকেন্ড রিলায়েবলি আপডেট করতে পারে
+        // না — ব্যাটারি/Doze সীমাবদ্ধতা)। কম্প্যাক্ট রাখার জন্য দিন/ঘন্টা ০ হলে
+        // সেই অংশ বাদ যায় (widget-এর ছোট জায়গায় ফিট করার জন্য)।
+        private fun formatCountdownCompact(lc: Context, lang: String, targetMs: Long): String {
+            val diffMs = (targetMs - System.currentTimeMillis()).coerceAtLeast(0L)
+            val totalMinutes = diffMs / 60000L
+            val days = totalMinutes / (24 * 60)
+            val hours = (totalMinutes % (24 * 60)) / 60
+            val minutes = totalMinutes % 60
+            return when {
+                days > 0 -> lc.getString(R.string.status_countdown_dhm, days, hours, minutes)
+                hours > 0 -> lc.getString(R.string.status_countdown_hm, hours, minutes)
+                else -> lc.getString(R.string.status_countdown_m, minutes)
+            }
+        }
+
+        // ✅ Task 5: তারিখ/সময় ফরম্যাট app-language অনুযায়ী বদলায়, কিন্তু
+        // ইউজারের বসানো location/title কখনো translate হয় না (PDF অনুযায়ী)
+        private fun formatMeetingDateTime(lang: String, targetMs: Long): String {
+            val pattern = when (lang) {
+                "de" -> "d. MMMM yyyy · HH:mm"
+                "es" -> "d MMM yyyy · HH:mm"
+                else -> "MMM d, yyyy · h:mm a"
+            }
+            val sdf = SimpleDateFormat(pattern, Locale(lang))
+            return sdf.format(Date(targetMs))
         }
     }
 }

@@ -5,6 +5,13 @@
     <string name="status_next_reunion">Próximo reencuentro en</string>
     <string name="status_days_pattern">%1$d días</string>
 
+    <!-- ✅ Task 5: Next Meeting Countdown -->
+    <string name="status_next_meeting_title">Próximo encuentro</string>
+    <string name="status_together_time_left_title">Tiempo juntos restante</string>
+    <string name="status_countdown_dhm">%1$dd %2$dh %3$dmin</string>
+    <string name="status_countdown_hm">%1$dh %2$dmin</string>
+    <string name="status_countdown_m">%1$dmin</string>
+
     <string name="status_love_line1">%1$s te envió</string>
     <string name="status_love_line2">¡amor! ❤️</string>
 

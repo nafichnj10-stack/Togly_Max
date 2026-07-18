@@ -250,6 +250,9 @@ async function processTravelStateForRelationship(relationshipId) {
         updates.love_buddies_traveler_uid = finalTravelerUid;
         updates.love_buddies_destination_uid = destinationUid;
         updates.love_buddies_travel_target_at = chosenEvent.end || null;
+        updates.love_buddies_travel_start_at = chosenEvent.start || null;
+        updates.love_buddies_travel_location = String(chosenEvent.location || "").trim();
+        updates.love_buddies_travel_title = String(chosenEvent.title || "").trim();
         updates.love_buddies_travel_all_day = chosenEvent.all_day === true;
         updates.love_buddies_travel_event_id = chosenEvent.id;
 
@@ -463,6 +466,12 @@ async function syncLoveBuddyWidgetStateInternal(relationshipId) {
       widget_last_love_sent_by_uid: lastLoveSentByUid,
       widget_last_love_sent_at: lastLoveSentAt,
 
+      widget_next_meeting_event_id: rel.love_buddies_travel_event_id || null,
+      widget_next_meeting_start_at: rel.love_buddies_travel_start_at || null,
+      widget_next_meeting_end_at: rel.love_buddies_travel_target_at || null,
+      widget_next_meeting_location: rel.love_buddies_travel_location || "",
+      widget_next_meeting_title: rel.love_buddies_travel_title || "",
+
       live_location_active: liveLocationActive,
       live_location_mode: liveLocationMode,
 
@@ -488,6 +497,12 @@ async function syncLoveBuddyWidgetStateInternal(relationshipId) {
       widget_returning_uid: returningUid,
       widget_last_love_sent_by_uid: lastLoveSentByUid,
       widget_last_love_sent_at: lastLoveSentAt,
+
+      widget_next_meeting_event_id: rel.love_buddies_travel_event_id || null,
+      widget_next_meeting_start_at: rel.love_buddies_travel_start_at || null,
+      widget_next_meeting_end_at: rel.love_buddies_travel_target_at || null,
+      widget_next_meeting_location: rel.love_buddies_travel_location || "",
+      widget_next_meeting_title: rel.love_buddies_travel_title || "",
 
       live_location_active: liveLocationActive,
       live_location_mode: liveLocationMode,

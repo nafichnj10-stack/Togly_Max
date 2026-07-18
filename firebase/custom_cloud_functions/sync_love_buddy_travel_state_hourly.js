@@ -401,6 +401,16 @@ async function syncWidgetState(db, relationshipId) {
 
     widget_last_love_sent_type: lastLoveSentType,
 
+    widget_next_meeting_event_id: currentTravelEventId,
+
+    widget_next_meeting_start_at: rel.love_buddies_travel_start_at || null,
+
+    widget_next_meeting_end_at: rel.love_buddies_travel_target_at || null,
+
+    widget_next_meeting_location: rel.love_buddies_travel_location || "",
+
+    widget_next_meeting_title: rel.love_buddies_travel_title || "",
+
     widget_birthday_active: birthdayActive,
 
     widget_birthday_user_uids: birthdayUserUids,
@@ -581,6 +591,12 @@ async function syncRelationship(db, relationshipId) {
 
       updates.love_buddies_travel_target_at = null;
 
+      updates.love_buddies_travel_start_at = null;
+
+      updates.love_buddies_travel_location = "";
+
+      updates.love_buddies_travel_title = "";
+
       updates.love_buddies_travel_all_day = false;
 
       travelPackActive = false;
@@ -686,6 +702,12 @@ async function syncRelationship(db, relationshipId) {
 
         updates.love_buddies_travel_target_at = event.end || null;
 
+        updates.love_buddies_travel_start_at = event.start || null;
+
+        updates.love_buddies_travel_location = nonEmptyString(event.location);
+
+        updates.love_buddies_travel_title = nonEmptyString(event.title);
+
         updates.love_buddies_travel_all_day = false;
 
         updates.love_buddies_travel_event_id = event.id;
@@ -743,6 +765,12 @@ async function syncRelationship(db, relationshipId) {
       updates.love_buddies_destination_uid = null;
 
       updates.love_buddies_travel_target_at = null;
+
+      updates.love_buddies_travel_start_at = null;
+
+      updates.love_buddies_travel_location = "";
+
+      updates.love_buddies_travel_title = "";
 
       updates.love_buddies_travel_all_day = false;
 
