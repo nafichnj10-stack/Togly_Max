@@ -20,13 +20,6 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
 import java.util.concurrent.TimeUnit
 
-// ✅ REAL APP VERSION — কোনো hardcoded test login নেই। মূল Togly অ্যাপে
-// ইউজার যে Firebase Auth সেশনে লগইন করে আছে, এই সার্ভিস শুধু সেটাই ব্যবহার
-// করে (FirebaseAuth.getInstance().currentUser)। AuthStateListener দিয়ে
-// লগইন/লগআউট/অ্যাকাউন্ট-সুইচ — সবকিছু automatically হ্যান্ডল হয়।
-//
-// এই সার্ভিস চালু হয় MainActivity-এর MethodChannel থেকে ("startWidgetSync"),
-// সাধারণত মূল অ্যাপে লগইন সফল হওয়ার পরপরই Flutter সাইড থেকে কল করা হবে।
 class LoveBuddyLiveService : Service() {
 
     private val TAG = "LoveBuddyLiveService"
@@ -35,7 +28,6 @@ class LoveBuddyLiveService : Service() {
 
     private var authListener: FirebaseAuth.AuthStateListener? = null
 
-    // সব Firestore listener registrations — logout/onDestroy-তে একসাথে সব বন্ধ করার জন্য
     private var relViewListener: ListenerRegistration? = null
     private var relDocListener: ListenerRegistration? = null
     private var myUserListener: ListenerRegistration? = null
@@ -64,9 +56,6 @@ class LoveBuddyLiveService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        // ⚠️ FirebaseApp আলাদাভাবে init করার দরকার নেই — মূল অ্যাপের
-        // google-services.json দিয়ে Flutter (firebase_core প্লাগিন) স্টার্টআপেই
-        // default FirebaseApp init করে ফেলে, এই সার্ভিস একই প্রসেসে চলে।
         GlideNetworkSetup.ensureInitialized(applicationContext)
         startForegroundWithNotification()
         startWhenAuthenticated()
@@ -75,10 +64,6 @@ class LoveBuddyLiveService : Service() {
         pulseHandler.postDelayed(pulseRunnable, PULSE_TICK_MS)
     }
 
-    // ✅ বর্তমানে লগইন করা থাকলে সাথে সাথে শোনা শুরু করে, আর ভবিষ্যতে
-    // লগইন/লগআউট/অ্যাকাউন্ট বদল হলেও এই একই listener সেটা ধরে ফেলবে —
-    // তাই Flutter সাইডে বারবার "startWidgetSync" কল করার দরকার নেই,
-    // শুধু app শুরুতে একবার কল করলেই যথেষ্ট।
     private fun startWhenAuthenticated() {
         val auth = FirebaseAuth.getInstance()
 
@@ -107,8 +92,6 @@ class LoveBuddyLiveService : Service() {
         attachMyUserListener(uid)
     }
 
-    // ---------------- relationship_views/{uid} ----------------
-    // widget state, distance, love-sent, birthday, tz offset, next meeting — সবকিছুর মূল উৎস
     private fun attachRelationshipViewListener(uid: String) {
         relViewListener = db.collection("relationship_views").document(uid)
             .addSnapshotListener { snapshot, error ->
@@ -116,7 +99,6 @@ class LoveBuddyLiveService : Service() {
                     Log.e(TAG, "relationship_views listen failed: ${error.message}")
                     return@addSnapshotListener
                 }
-                // ✅ script item 11: ডকুমেন্টই নেই মানে এখনো কারো সাথে connect করা হয়নি
                 if (snapshot == null || !snapshot.exists()) {
                     showNotConnectedState()
                     return@addSnapshotListener
@@ -132,9 +114,6 @@ class LoveBuddyLiveService : Service() {
         refreshWidget()
     }
 
-    // widget_background_key কে ToglyWidgetProvider-এর চেনা state key-তে ম্যাপ করে
-    // (এখন WidgetStateResolver.kt-এ shared — দেখুন LoveStateRefreshReceiver-ও এটা ব্যবহার করে)
-
     private fun handleRelationshipViewUpdate(data: Map<String, Any?>) {
         val prefs = getSharedPreferences("togly_prefs", Context.MODE_PRIVATE)
 
@@ -142,17 +121,11 @@ class LoveBuddyLiveService : Service() {
         val relationshipId = data["relationship_id"] as? String
         val relationshipStatus = data["relationship_status"] as? String
 
-        // ✅ script item 11: relationship_id/partner_uid ফাঁকা বা relationship_status
-        // active না — মানে এখনো কারো সাথে connect করা হয়নি
         if (relationshipId.isNullOrBlank() || partnerUid.isNullOrBlank()) {
             showNotConnectedState()
             return
         }
 
-        // ✅ script item 10: paused relationship — সব state-এর চেয়ে বেশি priority।
-        // relationship_views ডকুমেন্টে যেকোনো একটা সিগন্যাল থাকলেই paused ধরা হয়:
-        // paused == true / relationship_status == "disconnect_pending" /
-        // widget_state == "paused"
         val isPaused = data["paused"] == true ||
             relationshipStatus == "disconnect_pending" ||
             (data["widget_state"] as? String) == "paused"
@@ -166,30 +139,28 @@ class LoveBuddyLiveService : Service() {
         val rawBackgroundKey = data["widget_background_key"] as? String ?: "normal"
         val resolvedState = WidgetStateResolver.resolve(rawBackgroundKey, data, currentUid)
 
-        // ✅ client feedback item 5 + Task 4 ফিক্স: love_sent state হলে, ঠিক
-        // ৩০ মিনিট পরে widget নিজে থেকেই রিফ্রেশ হওয়ার জন্য একটা alarm
-        // সিডিউল করা হয় — এখন শেয়ার্ড LoveStateAlarmScheduler ব্যবহার করে,
-        // SendLoveReceiver-এর সাথে duplicate/conflicting alarm আর হবে না।
         if (resolvedState == "love_dog_to_cat" || resolvedState == "love_cat_to_dog") {
             val lastSentAtMs = extractTimestampMillis(data["widget_last_love_sent_at"])
             LoveStateAlarmScheduler.schedule(this, lastSentAtMs)
         }
 
-        // ✅ Task 5: Next Meeting Countdown — সরাসরি relationship_views থেকে
-        // পড়া হয়, আলাদা কোনো calendar_events query ছাড়াই (Cloud Function
-        // আগে থেকেই সঠিক next meeting বেছে এখানে সিঙ্ক করে রাখে)।
+        // ✅ Task 5: Next Meeting Countdown — সরাসরি relationship_views থেকে,
+        // Log যোগ করা হয়েছে যাতে raw ভ্যালু কী আসছে (আর কী টাইপে) সরাসরি
+        // logcat-এ দেখা যায় — ডিবাগ করা সহজ হবে।
+        val rawStart = data["widget_next_meeting_start_at"]
+        val rawEnd = data["widget_next_meeting_end_at"]
+        Log.d(TAG, "next_meeting raw -> event_id=${data["widget_next_meeting_event_id"]} " +
+            "start=$rawStart (${rawStart?.javaClass?.simpleName}) " +
+            "end=$rawEnd (${rawEnd?.javaClass?.simpleName}) " +
+            "location=${data["widget_next_meeting_location"]}")
+
         val nextMeetingEventId = (data["widget_next_meeting_event_id"] as? String)?.takeIf { it.isNotBlank() }
-        val nextMeetingStartMs = extractTimestampMillis(data["widget_next_meeting_start_at"])
-        val nextMeetingEndMs = extractTimestampMillis(data["widget_next_meeting_end_at"])
+        val nextMeetingStartMs = extractTimestampMillis(rawStart)
+        val nextMeetingEndMs = extractTimestampMillis(rawEnd)
         val nextMeetingLocation = (data["widget_next_meeting_location"] as? String)?.takeIf { it.isNotBlank() } ?: ""
 
         prefs.edit().apply {
             putString("widget_state", resolvedState)
-            // ✅ FIX: my_love_buddy_name/partner_love_buddy_name হলো ঐচ্ছিক নিকনেম
-            // ফিল্ড — বেশিরভাগ ইউজার এটা সেট করেননি বলে Firestore-এ এটা প্রায়ই
-            // খালি স্ট্রিং (""") থাকে, null না। আগের কোড খালি স্ট্রিংকেও "ভ্যালিড"
-            // ধরে নিচ্ছিল, তাই আসল name ফিল্ডে fallback হচ্ছিল না — ফলে নাম ফাঁকা
-            // দেখাচ্ছিল। .isNotBlank() চেক দিয়ে খালি স্ট্রিংকেও "নেই" ধরা হচ্ছে।
             val myLoveBuddyName = (data["my_love_buddy_name"] as? String)?.takeIf { it.isNotBlank() }
             val myRealName = (data["my_name"] as? String)?.takeIf { it.isNotBlank() }
             val partnerLoveBuddyName = (data["partner_love_buddy_name"] as? String)?.takeIf { it.isNotBlank() }
@@ -197,7 +168,6 @@ class LoveBuddyLiveService : Service() {
             putString("name_left", myLoveBuddyName ?: myRealName ?: "Me")
             putString("name_right", partnerLoveBuddyName ?: partnerRealName ?: "Partner")
 
-            // কে dog, কে cat — ইউজারভেদে বদলাতে পারে, তাই hardcode না করে ডেটা থেকে পড়া
             putString("pet_left", data["my_love_buddy_pet"] as? String ?: "dog")
             putString("pet_right", data["partner_love_buddy_pet"] as? String ?: "cat")
 
@@ -208,9 +178,6 @@ class LoveBuddyLiveService : Service() {
                 putInt("distance_progress_pct", it.toInt())
             }
 
-            // ✅ script item 8: Last GPS update — updateLoveBuddyLiveLocation Cloud
-            // Function ট্রাভেলারের নিজের relationship_views ডকুমেন্টে
-            // "my_live_location_updated_at" টাইমস্ট্যাম্প লেখে
             extractTimestampMillis(data["my_live_location_updated_at"])?.let {
                 putLong("last_gps_update_ms", it)
             }
@@ -224,9 +191,6 @@ class LoveBuddyLiveService : Service() {
             }
             putInt("tz_diff_hours", diffHours)
 
-            // ✅ Task 5: Next Meeting prefs — event_id/start_at না থাকলে explicit
-            // ভাবে খালি/-1 লিখে দেওয়া হচ্ছে, যাতে পুরনো meeting চলে যাওয়ার পরও
-            // widget-এ stale countdown আটকে না থাকে।
             if (nextMeetingEventId != null && nextMeetingStartMs != null) {
                 putString("next_meeting_event_id", nextMeetingEventId)
                 putLong("next_meeting_start_at_ms", nextMeetingStartMs)
@@ -241,13 +205,11 @@ class LoveBuddyLiveService : Service() {
             apply()
         }
 
-        // পার্টনার প্রথমবার জানা গেলে (বা বদলে গেলে) তার পাবলিক প্রোফাইল (দেশ) শোনা শুরু করি
         if (partnerUid != currentPartnerUid) {
             currentPartnerUid = partnerUid
             attachPartnerPublicListener(partnerUid)
         }
 
-        // relationship_id প্রথমবার জানা গেলে paused-এর real-time fallback শোনা শুরু করি
         if (relationshipId != currentRelationshipId) {
             currentRelationshipId = relationshipId
             attachRelationshipDocListener(relationshipId)
@@ -258,18 +220,27 @@ class LoveBuddyLiveService : Service() {
         loadPhotosAndRefresh(myPhotoUrl, partnerPhotoUrl)
     }
 
-    // Firestore Timestamp (.toDate()) বা epoch millis Number — দুটোই হ্যান্ডেল করে
+    // Firestore Timestamp / epoch millis Number / ISO-8601 String — তিনটাই হ্যান্ডেল করে
     private fun extractTimestampMillis(value: Any?): Long? {
         if (value == null) return null
-        return try {
+        // Firestore Timestamp
+        try {
             val toDateMethod = value.javaClass.getMethod("toDate")
-            (toDateMethod.invoke(value) as? java.util.Date)?.time
-        } catch (e: Exception) {
-            (value as? Number)?.toLong()
+            (toDateMethod.invoke(value) as? java.util.Date)?.time?.let { return it }
+        } catch (e: Exception) { /* not a Timestamp, try next */ }
+        // epoch millis Number
+        (value as? Number)?.let { return it.toLong() }
+        // ISO-8601 String (e.g. "2026-07-20T18:00:00Z")
+        (value as? String)?.let { str ->
+            try {
+                return java.time.Instant.parse(str).toEpochMilli()
+            } catch (e: Exception) {
+                Log.e(TAG, "Could not parse timestamp string: $str (${e.message})")
+            }
         }
+        return null
     }
 
-    // ---------------- Users/{uid} — নিজের দেশ + অ্যাপের ভাষা সেটিং ----------------
     private fun attachMyUserListener(uid: String) {
         myUserListener = db.collection("Users").document(uid)
             .addSnapshotListener { snapshot, error ->
@@ -292,7 +263,6 @@ class LoveBuddyLiveService : Service() {
             }
     }
 
-    // ---------------- PublicUsers/{partnerUid} — পার্টনারের দেশ ----------------
     private fun attachPartnerPublicListener(partnerUid: String) {
         partnerPublicListener?.remove()
         partnerPublicListener = db.collection("PublicUsers").document(partnerUid)
@@ -312,14 +282,6 @@ class LoveBuddyLiveService : Service() {
             }
     }
 
-    // ---------------- relationships/{relationshipId} — শুধু real-time paused fallback ----------------
-    // ✅ Task 5 সিমপ্লিফিকেশন: এখানে আগে "next_meeting_date" নামের একটা ফিল্ড
-    // পড়ে countdown_days হিসাব হতো, কিন্তু কোনো Cloud Function সেই ফিল্ডটা আর
-    // লেখেই না (dead field) — তাই সেটা সবসময় কার্যকরভাবে কাজ করছিল না।
-    // Next Meeting এখন সরাসরি relationship_views-এর widget_next_meeting_*
-    // ফিল্ড থেকে আসে (handleRelationshipViewUpdate দেখুন), তাই এখানে আর
-    // আলাদা countdown হিসাব করার দরকার নেই — এই listener এখন শুধু paused
-    // অবস্থার real-time fallback চেক করে।
     private fun attachRelationshipDocListener(relationshipId: String) {
         relDocListener?.remove()
         relDocListener = db.collection("relationships").document(relationshipId)
@@ -352,7 +314,6 @@ class LoveBuddyLiveService : Service() {
         currentRelationshipId = null
     }
 
-    // ছবি ডাউনলোড network কল, তাই main thread-এ না করে background থ্রেডে করা হচ্ছে
     private fun loadPhotosAndRefresh(myPhotoUrl: String?, partnerPhotoUrl: String?) {
         Thread {
             val leftBitmap = tryLoadBitmap(myPhotoUrl, "MY")
