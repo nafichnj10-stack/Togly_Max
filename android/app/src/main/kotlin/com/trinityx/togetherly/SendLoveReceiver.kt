@@ -81,12 +81,12 @@ class SendLoveReceiver : BroadcastReceiver() {
             showFeedback(context, serverSnackText ?: "Love sent to your partner 💜")
             // ✅ শুধু সফল হলেই animation চলবে
             SendLoveAnimator.play(context, widgetId)
-            // ✅ Love Sent state auto-revert fix: এখানেই সরাসরি ৩০-মিনিটের রিফ্রেশ
-            // alarm সিডিউল করা হচ্ছে, কারণ LoveBuddyLiveService তখনই চলে যখন app
-            // খোলা থাকে — কিন্তু widget-এর Send Love ট্যাপ app বন্ধ থাকলেও কাজ করে।
-            // তাই app না খুলেও ঠিক ৩০ মিনিট পরে widget নিজে থেকেই normal/আগের
-            // state-এ ফিরে আসবে।
-            scheduleLoveStateRefresh(context)
+            // ✅ Task 4 ফিক্স: এখন শেয়ার্ড LoveStateAlarmScheduler ব্যবহার করা
+            // হচ্ছে (আগে এখানে নিজস্ব copy-paste করা scheduling logic ছিল, যেটা
+            // LoveBuddyLiveService-এর নিজস্ব copy-এর সাথে conflict করতে পারত)।
+            // lastSentAtMs জানা নেই বলে null পাঠানো হচ্ছে — scheduler এখন থেকেই
+            // ৩০ মিনিট গুনবে (আগের আচরণের মতোই)।
+            LoveStateAlarmScheduler.schedule(context, null)
             // ✅ Love Sent state immediate-update fix: app বন্ধ থাকলে love পাঠানোর
             // সাথে সাথে widget তাৎক্ষণিকভাবে love-sent state দেখাতো না — আগে যেই
             // state (যেমন "together") ছিল সেটাই দেখাতে থাকতো, যতক্ষণ না app খোলা
@@ -105,25 +105,6 @@ class SendLoveReceiver : BroadcastReceiver() {
                 else -> "Couldn't send love right now — please try again."
             }
             showFeedback(context, serverSnackText ?: fallback)
-        }
-    }
-
-    // ✅ Love Sent state auto-revert fix: Send Love ট্যাপ হওয়ার সাথে সাথেই
-    // (app খোলা থাক বা না থাক) সরাসরি এখান থেকে exact, Doze-safe one-shot
-    // alarm সিডিউল করা হয় — যাতে ৩০ মিনিট পরে widget নিজে নিজেই আগের/normal
-    // state-এ ফিরে আসে, app open করার উপর নির্ভর করতে হয় না।
-    private fun scheduleLoveStateRefresh(context: Context) {
-        val triggerAtMs = System.currentTimeMillis() + 30 * 60 * 1000L + 5000L
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as? android.app.AlarmManager ?: return
-        val intent = Intent(context, LoveStateRefreshReceiver::class.java)
-        val pendingIntent = android.app.PendingIntent.getBroadcast(
-            context, 5001, intent,
-            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-        )
-        try {
-            alarmManager.setExactAndAllowWhileIdle(android.app.AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
-        } catch (e: SecurityException) {
-            alarmManager.set(android.app.AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
         }
     }
 

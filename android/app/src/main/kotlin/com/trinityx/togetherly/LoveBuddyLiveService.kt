@@ -1,10 +1,8 @@
 package com.trinityx.togetherly
 
-import android.app.AlarmManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.PendingIntent
 import android.app.Service
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
@@ -110,7 +108,7 @@ class LoveBuddyLiveService : Service() {
     }
 
     // ---------------- relationship_views/{uid} ----------------
-    // widget state, distance, love-sent, birthday, tz offset — সবকিছুর মূল উৎস
+    // widget state, distance, love-sent, birthday, tz offset, next meeting — সবকিছুর মূল উৎস
     private fun attachRelationshipViewListener(uid: String) {
         relViewListener = db.collection("relationship_views").document(uid)
             .addSnapshotListener { snapshot, error ->
@@ -168,19 +166,28 @@ class LoveBuddyLiveService : Service() {
         val rawBackgroundKey = data["widget_background_key"] as? String ?: "normal"
         val resolvedState = WidgetStateResolver.resolve(rawBackgroundKey, data, currentUid)
 
-        // ✅ client feedback item 5: love_sent state হলে, ঠিক ৩০ মিনিট পরে
-        // widget নিজে থেকেই রিফ্রেশ হওয়ার জন্য একটা alarm সিডিউল করা হয় —
-        // app খোলার উপর নির্ভর করতে হয় না।
+        // ✅ client feedback item 5 + Task 4 ফিক্স: love_sent state হলে, ঠিক
+        // ৩০ মিনিট পরে widget নিজে থেকেই রিফ্রেশ হওয়ার জন্য একটা alarm
+        // সিডিউল করা হয় — এখন শেয়ার্ড LoveStateAlarmScheduler ব্যবহার করে,
+        // SendLoveReceiver-এর সাথে duplicate/conflicting alarm আর হবে না।
         if (resolvedState == "love_dog_to_cat" || resolvedState == "love_cat_to_dog") {
             val lastSentAtMs = extractTimestampMillis(data["widget_last_love_sent_at"])
-            scheduleLoveStateRefresh(lastSentAtMs)
+            LoveStateAlarmScheduler.schedule(this, lastSentAtMs)
         }
+
+        // ✅ Task 5: Next Meeting Countdown — সরাসরি relationship_views থেকে
+        // পড়া হয়, আলাদা কোনো calendar_events query ছাড়াই (Cloud Function
+        // আগে থেকেই সঠিক next meeting বেছে এখানে সিঙ্ক করে রাখে)।
+        val nextMeetingEventId = (data["widget_next_meeting_event_id"] as? String)?.takeIf { it.isNotBlank() }
+        val nextMeetingStartMs = extractTimestampMillis(data["widget_next_meeting_start_at"])
+        val nextMeetingEndMs = extractTimestampMillis(data["widget_next_meeting_end_at"])
+        val nextMeetingLocation = (data["widget_next_meeting_location"] as? String)?.takeIf { it.isNotBlank() } ?: ""
 
         prefs.edit().apply {
             putString("widget_state", resolvedState)
             // ✅ FIX: my_love_buddy_name/partner_love_buddy_name হলো ঐচ্ছিক নিকনেম
             // ফিল্ড — বেশিরভাগ ইউজার এটা সেট করেননি বলে Firestore-এ এটা প্রায়ই
-            // খালি স্ট্রিং ("") থাকে, null না। আগের কোড খালি স্ট্রিংকেও "ভ্যালিড"
+            // খালি স্ট্রিং (""") থাকে, null না। আগের কোড খালি স্ট্রিংকেও "ভ্যালিড"
             // ধরে নিচ্ছিল, তাই আসল name ফিল্ডে fallback হচ্ছিল না — ফলে নাম ফাঁকা
             // দেখাচ্ছিল। .isNotBlank() চেক দিয়ে খালি স্ট্রিংকেও "নেই" ধরা হচ্ছে।
             val myLoveBuddyName = (data["my_love_buddy_name"] as? String)?.takeIf { it.isNotBlank() }
@@ -216,6 +223,21 @@ class LoveBuddyLiveService : Service() {
                 0
             }
             putInt("tz_diff_hours", diffHours)
+
+            // ✅ Task 5: Next Meeting prefs — event_id/start_at না থাকলে explicit
+            // ভাবে খালি/-1 লিখে দেওয়া হচ্ছে, যাতে পুরনো meeting চলে যাওয়ার পরও
+            // widget-এ stale countdown আটকে না থাকে।
+            if (nextMeetingEventId != null && nextMeetingStartMs != null) {
+                putString("next_meeting_event_id", nextMeetingEventId)
+                putLong("next_meeting_start_at_ms", nextMeetingStartMs)
+                putLong("next_meeting_end_at_ms", nextMeetingEndMs ?: -1L)
+                putString("next_meeting_location", nextMeetingLocation)
+            } else {
+                putString("next_meeting_event_id", "")
+                putLong("next_meeting_start_at_ms", -1L)
+                putLong("next_meeting_end_at_ms", -1L)
+                putString("next_meeting_location", "")
+            }
             apply()
         }
 
@@ -225,7 +247,7 @@ class LoveBuddyLiveService : Service() {
             attachPartnerPublicListener(partnerUid)
         }
 
-        // relationship_id প্রথমবার জানা গেলে next_meeting_date শোনা শুরু করি (countdown-এর জন্য)
+        // relationship_id প্রথমবার জানা গেলে paused-এর real-time fallback শোনা শুরু করি
         if (relationshipId != currentRelationshipId) {
             currentRelationshipId = relationshipId
             attachRelationshipDocListener(relationshipId)
@@ -234,33 +256,6 @@ class LoveBuddyLiveService : Service() {
         val myPhotoUrl = data["my_photo_url"] as? String
         val partnerPhotoUrl = data["partner_photo_url"] as? String
         loadPhotosAndRefresh(myPhotoUrl, partnerPhotoUrl)
-    }
-
-    // ✅ client feedback item 5: love_sent detect হওয়ার সাথে সাথে ঠিক (sent_at + 30min)
-    // সময়ে একটা exact, Doze-mode-safe one-shot alarm সিডিউল করা হয়। এই alarm
-    // ফায়ার হলে LoveStateRefreshReceiver সরাসরি Firestore থেকে fresh ডেটা
-    // টেনে widget_state আপডেট করে দেয় — app খোলার দরকার নেই।
-    private fun scheduleLoveStateRefresh(lastSentAtMs: Long?) {
-        val baseTime = lastSentAtMs ?: System.currentTimeMillis()
-        val triggerAtMs = baseTime + TimeUnit.MINUTES.toMillis(30) + 5000L // ৫ সেকেন্ড বাফার
-
-        // ইতিমধ্যে সময় পার হয়ে গেলে (যেমন সার্ভিস দেরিতে শুরু হলে) আলাদা করে
-        // alarm লাগবে না — পরের Firestore snapshot-ই সঠিক state দেখাবে
-        if (triggerAtMs <= System.currentTimeMillis()) return
-
-        val alarmManager = getSystemService(Context.ALARM_SERVICE) as? AlarmManager ?: return
-        val intent = Intent(this, LoveStateRefreshReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(
-            this, 5001, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        try {
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
-        } catch (e: SecurityException) {
-            // কিছু ডিভাইসে exact-alarm পারমিশন না থাকলে সাধারণ (inexact) alarm দিয়ে fallback
-            alarmManager.set(AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
-        }
     }
 
     // Firestore Timestamp (.toDate()) বা epoch millis Number — দুটোই হ্যান্ডেল করে
@@ -317,7 +312,14 @@ class LoveBuddyLiveService : Service() {
             }
     }
 
-    // ---------------- relationships/{relationshipId} — পরবর্তী দেখার countdown ----------------
+    // ---------------- relationships/{relationshipId} — শুধু real-time paused fallback ----------------
+    // ✅ Task 5 সিমপ্লিফিকেশন: এখানে আগে "next_meeting_date" নামের একটা ফিল্ড
+    // পড়ে countdown_days হিসাব হতো, কিন্তু কোনো Cloud Function সেই ফিল্ডটা আর
+    // লেখেই না (dead field) — তাই সেটা সবসময় কার্যকরভাবে কাজ করছিল না।
+    // Next Meeting এখন সরাসরি relationship_views-এর widget_next_meeting_*
+    // ফিল্ড থেকে আসে (handleRelationshipViewUpdate দেখুন), তাই এখানে আর
+    // আলাদা countdown হিসাব করার দরকার নেই — এই listener এখন শুধু paused
+    // অবস্থার real-time fallback চেক করে।
     private fun attachRelationshipDocListener(relationshipId: String) {
         relDocListener?.remove()
         relDocListener = db.collection("relationships").document(relationshipId)
@@ -329,10 +331,6 @@ class LoveBuddyLiveService : Service() {
                 val prefs = getSharedPreferences("togly_prefs", Context.MODE_PRIVATE)
                 val relData = snapshot?.data
 
-                // ✅ script item 10: paused সরাসরি এই relationships ডকুমেন্ট থেকেই
-                // real-time চেক করা হচ্ছে (কোনো Cloud Function redeploy লাগবে না) —
-                // active == false / relationship_status == "disconnect_pending" /
-                // love_buddies_widget_state == "paused" — যেকোনো একটা মিললেই paused
                 val isPaused = relData != null && (
                     relData["active"] == false ||
                     (relData["relationship_status"] as? String) == "disconnect_pending" ||
@@ -341,23 +339,7 @@ class LoveBuddyLiveService : Service() {
                 if (isPaused) {
                     prefs.edit().putString("widget_state", "paused").apply()
                     refreshWidget()
-                    return@addSnapshotListener
                 }
-
-                val nextMeeting = snapshot?.getTimestamp("next_meeting_date")
-                // ✅ script item 1 FIX: আগে next_meeting_date না থাকলে early-return
-                // করে stale countdown_days রেখে দিতো (header ভুলভাবে দেখাতে থাকতো
-                // পুরনো মিটিং চলে যাওয়ার পরও)। এখন explicit -1 লিখে header
-                // GONE করে দেওয়া হচ্ছে যখন সত্যিই কোনো next meeting নেই।
-                if (nextMeeting == null) {
-                    prefs.edit().putInt("countdown_days", -1).apply()
-                    refreshWidget()
-                    return@addSnapshotListener
-                }
-                val diffMs = nextMeeting.toDate().time - System.currentTimeMillis()
-                val days = TimeUnit.MILLISECONDS.toDays(diffMs).toInt().coerceAtLeast(0)
-                prefs.edit().putInt("countdown_days", days).apply()
-                refreshWidget()
             }
     }
 

@@ -3,7 +3,9 @@ package com.trinityx.togetherly
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import com.google.firebase.auth.FirebaseAuth
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -108,6 +110,24 @@ class MainActivity : FlutterFragmentActivity() {
                         prefs.edit().remove("pending_widget_route").apply()
                     }
                     result.success(route)
+                }
+                // ✅ Task 4 ফিক্স: Flutter সাইড থেকে চেক করার জন্য — false এলে
+                // ইউজারকে বোঝাতে হবে কেন Send Love-এর ৩০ মিনিটের auto-revert
+                // কাজ নাও করতে পারে, এবং openExactAlarmSettings দিয়ে সরাসরি
+                // Settings-এ পাঠানো যাবে।
+                "hasExactAlarmPermission" -> {
+                    result.success(LoveStateAlarmScheduler.hasExactAlarmPermission(this))
+                }
+                "openExactAlarmSettings" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                        val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                            data = Uri.parse("package:$packageName")
+                        }
+                        startActivity(intent)
+                        result.success(true)
+                    } else {
+                        result.success(false)
+                    }
                 }
                 else -> result.notImplemented()
             }
