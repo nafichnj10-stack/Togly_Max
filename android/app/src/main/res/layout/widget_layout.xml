@@ -177,7 +177,7 @@
                     android:textSize="7sp" />
             </LinearLayout>
 
-            <View
+            <ImageView
                 android:layout_width="1dp"
                 android:layout_height="18dp"
                 android:layout_marginStart="6dp"
@@ -211,7 +211,7 @@
                     android:textSize="7sp" />
             </LinearLayout>
 
-            <View
+            <ImageView
                 android:layout_width="1dp"
                 android:layout_height="18dp"
                 android:layout_marginStart="6dp"
@@ -245,7 +245,7 @@
                     android:textSize="7sp" />
             </LinearLayout>
 
-            <View
+            <ImageView
                 android:id="@+id/divider_nm_seconds"
                 android:layout_width="1dp"
                 android:layout_height="18dp"
