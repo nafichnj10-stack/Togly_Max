@@ -15,6 +15,12 @@
     <string name="status_countdown_hm">%1$dh %2$dm</string>
     <string name="status_countdown_m">%1$dm</string>
 
+    <!-- ✅ Next Meeting card D/H/M/S box labels -->
+    <string name="nm_label_days">DAYS</string>
+    <string name="nm_label_hours">HRS</string>
+    <string name="nm_label_minutes">MIN</string>
+    <string name="nm_label_seconds">SEC</string>
+
     <string name="status_love_line1">%1$s sent you</string>
     <string name="status_love_line2">love! ❤️</string>
 

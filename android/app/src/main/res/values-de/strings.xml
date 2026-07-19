@@ -12,6 +12,11 @@
     <string name="status_countdown_hm">%1$dStd %2$dMin</string>
     <string name="status_countdown_m">%1$dMin</string>
 
+    <string name="nm_label_days">TAGE</string>
+    <string name="nm_label_hours">STD</string>
+    <string name="nm_label_minutes">MIN</string>
+    <string name="nm_label_seconds">SEK</string>
+
     <string name="status_love_line1">%1$s hat dir</string>
     <string name="status_love_line2">Liebe geschickt! ❤️</string>
 
