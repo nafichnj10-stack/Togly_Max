@@ -82,8 +82,8 @@ object WidgetBitmapHelper {
             cardCornerRadius, cardCornerRadius, borderPaintBg
         )
 
-        val cy = H / 2f + 3f
-        val r = (H / 2f - 3f) * 1.0f
+        val cy = H / 2f
+        val r = (H / 2f - 7f) * 1.0f
         val leftCx = r + 4f
         val rightCx = W - r - 4f
 
@@ -174,11 +174,18 @@ object WidgetBitmapHelper {
             }
             val bikeHeight = (r * 3f).toInt().coerceAtLeast(1)
             val bikeBitmap = loadBikeFrame(context, frameRes, bikeHeight)
-            val bikeBottomY = 8f
+            val bikeBottomY = -34f
             val bikeTop = bikeBottomY - bikeBitmap.height
             val dogCx = if (dogSide == "left") actualLeftCx else actualRightCx
             val bikeLeft = dogCx - bikeBitmap.width / 2f
+            // dog_cycle আর্টওয়ার্ক ডিফল্টভাবে left-side (center-মুখী) ধরে আঁকা —
+            // pet swap হয়ে dogSide "right" হলে হরাইজন্টালি ফ্লিপ করতে হবে
+            canvas.save()
+            if (dogSide == "right") {
+                canvas.scale(-1f, 1f, dogCx, 0f)
+            }
             canvas.drawBitmap(bikeBitmap, bikeLeft, bikeTop, Paint().apply { isAntiAlias = true })
+            canvas.restore()
         }
 
         // ✅ FIX: cat সাইকেল অ্যানিমেশন আগে সবসময় right-এ (actualRightCx) আঁকা
@@ -194,11 +201,18 @@ object WidgetBitmapHelper {
             }
             val catBikeHeight = (r * 3f).toInt().coerceAtLeast(1)
             val catBikeBitmap = loadBikeFrame(context, frameRes, catBikeHeight)
-            val catBikeBottomY = 8f
+            val catBikeBottomY = -34f
             val catBikeTop = catBikeBottomY - catBikeBitmap.height
             val catCx = if (catSide == "left") actualLeftCx else actualRightCx
             val catBikeLeft = catCx - catBikeBitmap.width / 2f
+            // cat_cycle আর্টওয়ার্ক ডিফল্টভাবে right-side (center-মুখী) ধরে আঁকা —
+            // pet swap হয়ে catSide "left" হলে হরাইজন্টালি ফ্লিপ করতে হবে
+            canvas.save()
+            if (catSide == "left") {
+                canvas.scale(-1f, 1f, catCx, 0f)
+            }
             canvas.drawBitmap(catBikeBitmap, catBikeLeft, catBikeTop, Paint().apply { isAntiAlias = true })
+            canvas.restore()
         }
 
         // ✅ fix: duplicate distance-text বাগ — এখন card_distance bubble অথবা
