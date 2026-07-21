@@ -174,7 +174,7 @@ object WidgetBitmapHelper {
             }
             val bikeHeight = (r * 3f).toInt().coerceAtLeast(1)
             val bikeBitmap = loadBikeFrame(context, frameRes, bikeHeight)
-            val bikeBottomY = -8f
+            val bikeBottomY = -20f
             val bikeTop = bikeBottomY - bikeBitmap.height
             val dogCx = if (dogSide == "left") actualLeftCx else actualRightCx
             val bikeLeft = dogCx - bikeBitmap.width / 2f
@@ -201,7 +201,7 @@ object WidgetBitmapHelper {
             }
             val catBikeHeight = (r * 3f).toInt().coerceAtLeast(1)
             val catBikeBitmap = loadBikeFrame(context, frameRes, catBikeHeight)
-            val catBikeBottomY = -8f
+            val catBikeBottomY = -20f
             val catBikeTop = catBikeBottomY - catBikeBitmap.height
             val catCx = if (catSide == "left") actualLeftCx else actualRightCx
             val catBikeLeft = catCx - catBikeBitmap.width / 2f
